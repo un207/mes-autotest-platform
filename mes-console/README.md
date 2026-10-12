@@ -51,6 +51,24 @@ npm run preview      # 预览构建产物，http://localhost:4173
 | **追溯查询** | 追溯 2 个 | 正向（批次→流向）／反向（工单→用料+不良），时间线呈现链路 |
 | **设备数采** | 数采 4 个操作 | 数采记录、异常原因分布、异常数据逐条排查 |
 
+### 界面预览
+
+截图取自真实运行的界面（数据来自真实接口，非静态样例）。
+
+**总览** —— 核心指标 + 产量日报 + 低良率排行
+
+![总览](./docs/screenshots/01-总览.png)
+
+**设备数采** —— 表格里是 Modbus 模拟器上报的数据，异常原因分布与逐条排查清单
+
+![设备数采](./docs/screenshots/06-设备数采.png)
+
+其余页面截图见 [`docs/screenshots/`](./docs/screenshots)：
+[工单管理](./docs/screenshots/02-工单管理.png) ·
+[质量管理](./docs/screenshots/03-质量管理.png) ·
+[物料批次](./docs/screenshots/04-物料批次.png) ·
+[追溯查询](./docs/screenshots/05-追溯查询.png)
+
 ---
 
 ## 三个刻意的设计选择

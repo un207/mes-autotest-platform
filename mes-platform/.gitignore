@@ -1,0 +1,28 @@
+# ---- Java / Maven ----
+target/
+!.mvn/wrapper/maven-wrapper.jar
+*.jar
+*.war
+*.class
+
+# ---- IDE ----
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+
+# ---- 日志与临时文件 ----
+logs/
+*.log
+*.tmp
+.tmp/
+
+# ---- 系统 ----
+.DS_Store
+Thumbs.db
+
+# ---- 禁止提交本地口令（配置一律走环境变量） ----
+*.local.yml
+application-local.yml

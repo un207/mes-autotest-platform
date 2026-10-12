@@ -1,0 +1,41 @@
+# 接口路径集中登记 —— 与 mes-platform 的 Controller 一一对应（共 24 个地址）。
+# 契约集中在一处，改地址只改这里，用例脚本不动。
+# 占位符用 {name} 形式，调用时通过 endpoints.path("key", name=value) 填充。
+
+# --- 自检 ---
+health: /api/health
+ready: /api/ready
+
+# --- 工单管理 ---
+work_orders: /api/work-orders
+work_order_detail: /api/work-orders/{orderNo}
+work_order_reports: /api/work-orders/{orderNo}/reports
+work_order_dispatch: /api/work-orders/{orderNo}/dispatch
+work_order_close: /api/work-orders/{orderNo}/close
+
+# --- 质量管理 ---
+quality_inspections: /api/quality-inspections
+quality_defect_summary: /api/quality-inspections/defect-summary
+quality_defects_by_order: /api/quality-inspections/defects/{orderNo}
+quality_detail: /api/quality-inspections/{inspectNo}
+
+# --- 物料与批次 ---
+material_batches: /api/material-batches
+material_by_order: /api/material-batches/by-order/{orderNo}
+material_detail: /api/material-batches/{batchNo}
+material_bind: /api/material-batches/{batchNo}/bind
+material_outbound: /api/material-batches/{batchNo}/outbound
+
+# --- 追溯 ---
+trace_by_batch: /api/traces/batch/{batchNo}
+trace_by_order: /api/traces/order/{orderNo}
+
+# --- 设备数采 ---
+device_data: /api/device-data
+device_data_batch: /api/device-data/batch
+device_data_abnormal: /api/device-data/abnormal
+
+# --- 统计报表 ---
+stats_overview: /api/stats/overview
+stats_production: /api/stats/production
+stats_yield_orders: /api/stats/yield/orders

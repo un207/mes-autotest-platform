@@ -1,0 +1,64 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+  # 关闭 Tomcat 版本号暴露
+  tomcat:
+    max-swallow-size: 2MB
+
+spring:
+  application:
+    name: mes-platform
+  profiles:
+    active: ${MES_PROFILE:dev}
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+  mvc:
+    problemdetails:
+      enabled: false
+
+mybatis-plus:
+  # 实体在 mes 包下按业务域分包，mapper 均以 @Mapper 注解声明，由 starter 自动扫描
+  type-aliases-package: com.xwj.mes
+  configuration:
+    map-underscore-to-camel-case: true
+    # 枚举统一按 name() 存 VARCHAR，测试脚本可直接断言 'IN_PROGRESS' 这类字面量
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# CORS 白名单（M4 前端 Vite 本地端口）
+mes:
+  web:
+    allowed-origins:
+      - http://localhost:5173
+      - http://127.0.0.1:5173
+      - http://localhost:3000
+      - http://127.0.0.1:3000
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-no-trace}] %logger{40} - %msg%n"
+  level:
+    root: info
+    com.xwj.mes: debug

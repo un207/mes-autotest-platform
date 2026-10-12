@@ -1,0 +1,172 @@
+# 工单业务规则用例数据（数据驱动）
+# 每条用例只声明「输入」与「期望结果」，执行逻辑在 test_work_order_rules.py
+
+# ---------------------------------------------------------------------------
+# 数量守恒：合格 + 不良 必须等于报工数
+# ---------------------------------------------------------------------------
+qty_conservation:
+  - id: mismatch-defective
+    desc: 合格数 + 不良数 小于报工数，应拒绝
+    plan_qty: 500
+    report_qty: 100
+    qualified: 60
+    defective: 30
+    expect_code: 40000
+
+  - id: mismatch-exceed
+    desc: 合格数 + 不良数 大于报工数，应拒绝
+    plan_qty: 500
+    report_qty: 20
+    qualified: 18
+    defective: 5
+    expect_code: 40000
+
+  - id: negative-qualified
+    desc: 合格数为负数，应拒绝
+    plan_qty: 500
+    report_qty: 10
+    qualified: -5
+    defective: 15
+    expect_code: 40000
+
+  - id: negative-defective
+    desc: 不良数为负数，应拒绝
+    plan_qty: 500
+    report_qty: 10
+    qualified: 15
+    defective: -5
+    expect_code: 40000
+
+# ---------------------------------------------------------------------------
+# 数量自动推算：只传一个或都不传时的推导规则
+# ---------------------------------------------------------------------------
+qty_derive:
+  - id: both-omitted
+    desc: 两个都不传，按全部合格处理
+    plan_qty: 100
+    report_qty: 30
+    expect_qualified: 30
+    expect_defective: 0
+
+  - id: only-qualified
+    desc: 只传合格数，不良数自动推算
+    plan_qty: 100
+    report_qty: 30
+    qualified: 25
+    expect_qualified: 25
+    expect_defective: 5
+
+  - id: only-defective
+    desc: 只传不良数，合格数自动推算
+    plan_qty: 100
+    report_qty: 30
+    defective: 7
+    expect_qualified: 23
+    expect_defective: 7
+
+# ---------------------------------------------------------------------------
+# 超报拦截：累计报工数不得超过计划数
+# ---------------------------------------------------------------------------
+over_production:
+  - id: single-report-exceed
+    desc: 一次性报工就超过计划数，应拦截
+    plan_qty: 100
+    setup: dispatched
+    report_qty: 101
+    qualified: 101
+    defective: 0
+    expect_code: 40900
+
+  - id: cumulative-exceed
+    desc: 先报 90，再报 20，累计 110 超过计划 100，应拦截
+    plan_qty: 100
+    setup: dispatched
+    first_report: 90
+    report_qty: 20
+    qualified: 20
+    defective: 0
+    expect_code: 40900
+
+  - id: exact-plan-allowed
+    desc: 累计正好等于计划数，应放行
+    plan_qty: 100
+    setup: dispatched
+    first_report: 90
+    report_qty: 10
+    qualified: 10
+    defective: 0
+    expect_code: 0
+
+# ---------------------------------------------------------------------------
+# 状态机：action 在 setup 状态下是否允许
+# setup 取值：new / dispatched / in_progress / closed
+# action 取值：report / close / dispatch
+# ---------------------------------------------------------------------------
+state_machine:
+  - id: report-on-new
+    desc: 未派工就报工，应拒绝
+    setup: new
+    action: report
+    expect_code: 40900
+
+  - id: report-on-closed
+    desc: 已关闭后报工，应拒绝
+    setup: closed
+    action: report
+    expect_code: 40900
+
+  - id: close-on-new
+    desc: 未派工就关闭工单，应拒绝
+    setup: new
+    action: close
+    expect_code: 40900
+
+  - id: close-twice
+    desc: 重复关闭同一工单，应拒绝
+    setup: closed
+    action: close
+    expect_code: 40900
+
+  - id: dispatch-on-in-progress
+    desc: 生产中的工单再次派工，应拒绝
+    setup: in_progress
+    action: dispatch
+    expect_code: 40900
+
+  - id: dispatch-on-dispatched
+    desc: 已派工的工单可以再次派工（改产线），应放行
+    setup: dispatched
+    action: dispatch
+    expect_code: 0
+
+  - id: close-on-dispatched
+    desc: 已派工未报工也可直接关闭，应放行
+    setup: dispatched
+    action: close
+    expect_code: 0
+
+  - id: report-on-dispatched
+    desc: 已派工可以报工，应放行
+    setup: dispatched
+    action: report
+    expect_code: 0
+
+  - id: report-on-in-progress
+    desc: 生产中可以继续报工，应放行
+    setup: in_progress
+    action: report
+    expect_code: 0
+
+# ---------------------------------------------------------------------------
+# 计划时间校验
+# ---------------------------------------------------------------------------
+plan_time_reject:
+  - id: end-before-start
+    desc: 计划结束时间早于开始时间，应拒绝
+    plan_start: "2026-10-20 08:00:00"
+    plan_end: "2026-10-19 08:00:00"
+    expect_code: 40000
+    plan_qty: 10
+
+# 说明：接口参数校验（必填项 / 长度 / 取值范围）用例数据见 data/work_order_param.yml，
+#       单独成文件是因为那里的 body 是直接拼给接口的原始报文，与本文件的「语义规则」不是一类。

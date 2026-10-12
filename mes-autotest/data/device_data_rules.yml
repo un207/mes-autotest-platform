@@ -1,0 +1,132 @@
+# 设备数采数据质量判定用例数据（数据驱动）
+# 三层把关：可解析性 -> 工况区间 -> 时间合理性
+# 断言口径：
+#   value_present=true  表示解析后的数值必须落库（metricValue 非空）
+#   value_present=false 表示数值不入账（metricValue 为空），但原始串仍保留
+
+quality_cases:
+  # --- 第一层：可解析性 ---
+  - id: bad-not-a-number
+    desc: 上报值不是数值，判异常且数值不入账
+    metric: STATUS
+    raw: "###"
+    expect_flag: BAD
+    value_present: false
+
+  - id: bad-text-value
+    desc: 上报值是普通文本，判异常且数值不入账
+    metric: OUTPUT
+    raw: "abc"
+    expect_flag: BAD
+    value_present: false
+
+  - id: bad-mixed
+    desc: 上报值数值与符号混杂，判异常且数值不入账
+    metric: TEMPERATURE
+    raw: "12x3"
+    expect_flag: BAD
+    value_present: false
+
+  # --- 第二层：工况区间 ---
+  - id: ok-output
+    desc: 产量在合理区间内，判正常
+    metric: OUTPUT
+    raw: "120"
+    expect_flag: OK
+    value_present: true
+
+  - id: ok-output-zero
+    desc: 产量为 0（停机），在区间下界上，判正常
+    metric: OUTPUT
+    raw: "0"
+    expect_flag: OK
+    value_present: true
+
+  - id: ok-output-upper-bound
+    desc: 产量正好在区间上界 1000000，判正常
+    metric: OUTPUT
+    raw: "1000000"
+    expect_flag: OK
+    value_present: true
+
+  - id: suspect-output-negative
+    desc: 产量为负数，超出区间下界，判可疑但数值仍留档
+    metric: OUTPUT
+    raw: "-1"
+    expect_flag: SUSPECT
+    value_present: true
+
+  - id: suspect-output-too-large
+    desc: 产量超过区间上界，判可疑但数值仍留档
+    metric: OUTPUT
+    raw: "1000001"
+    expect_flag: SUSPECT
+    value_present: true
+
+  - id: ok-temperature-normal
+    desc: 温度 25℃ 正常
+    metric: TEMPERATURE
+    raw: "25"
+    expect_flag: OK
+    value_present: true
+
+  - id: ok-temperature-lower-bound
+    desc: 温度正好在区间下界 -50，判正常
+    metric: TEMPERATURE
+    raw: "-50"
+    expect_flag: OK
+    value_present: true
+
+  - id: suspect-temperature-high
+    desc: 温度 512℃ 超出上界 200，判可疑但数值仍留档
+    metric: TEMPERATURE
+    raw: "512"
+    expect_flag: SUSPECT
+    value_present: true
+
+  - id: suspect-temperature-low
+    desc: 温度 -80℃ 超出下界 -50，判可疑但数值仍留档
+    metric: TEMPERATURE
+    raw: "-80"
+    expect_flag: SUSPECT
+    value_present: true
+
+  - id: ok-status-running
+    desc: 运行状态 1，判正常
+    metric: STATUS
+    raw: "1"
+    expect_flag: OK
+    value_present: true
+
+  - id: suspect-status-out-of-range
+    desc: 运行状态码 99 超出 0~10，判可疑但数值仍留档
+    metric: STATUS
+    raw: "99"
+    expect_flag: SUSPECT
+    value_present: true
+
+  - id: ok-decimal-value
+    desc: 小数温度 36.5 正常
+    metric: TEMPERATURE
+    raw: "36.5"
+    expect_flag: OK
+    value_present: true
+
+# ---------------------------------------------------------------------------
+# 批量上报的边界
+# ---------------------------------------------------------------------------
+batch_cases:
+  - id: batch-single
+    desc: 批量上报 1 条
+    size: 1
+    expect_code: 0
+
+  - id: batch-max
+    desc: 批量上报正好 200 条（上限），应放行
+    size: 200
+    expect_code: 0
+
+  - id: batch-over-limit
+    desc: 批量上报 201 条，超过上限，应拒绝
+    size: 201
+    expect_code: 40000

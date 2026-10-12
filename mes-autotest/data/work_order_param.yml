@@ -1,0 +1,78 @@
+# 工单接口的参数校验用例数据
+# 说明：create_order_reject 的用例若未给 productCode，执行时会自动补一个本轮唯一编码，
+#       避免「编码重复」把参数校验用例带偏。
+
+create_order_reject:
+  - id: missing-product-name
+    desc: 缺产品名称（@NotBlank），应拒绝
+    body: {planQty: 10}
+    expect_code: 40000
+
+  - id: missing-plan-qty
+    desc: 缺计划数量（@NotNull），应拒绝
+    body: {productName: "参数校验件"}
+    expect_code: 40000
+
+  - id: plan-qty-zero
+    desc: 计划数量为 0（@Min 1），应拒绝
+    body: {productName: "参数校验件", planQty: 0}
+    expect_code: 40000
+
+  - id: plan-qty-negative
+    desc: 计划数量为负数，应拒绝
+    body: {productName: "参数校验件", planQty: -10}
+    expect_code: 40000
+
+  - id: plan-qty-too-large
+    desc: 计划数量超过上限 1000000（@Max），应拒绝
+    body: {productName: "参数校验件", planQty: 1000001}
+    expect_code: 40000
+
+  - id: product-code-blank
+    desc: 产品编码为空白串（@NotBlank），应拒绝
+    body: {productCode: "   ", productName: "参数校验件", planQty: 10}
+    expect_code: 40000
+
+  # 超长字段不手写长串，改为声明「哪个字段」「用什么片段重复」「至少多少字符」，
+  # 由用例在执行时生成并自校验长度 —— 手数长度迟早会错。
+  - id: product-code-too-long
+    desc: 产品编码超过 32 字符（@Size），应拒绝
+    body: {productName: "参数校验件", planQty: 10}
+    long_field: productCode
+    repeat_unit: "P"
+    min_length: 33
+    expect_code: 40000
+
+  - id: product-name-too-long
+    desc: 产品名称超过 64 字符（@Size），应拒绝
+    body: {planQty: 10}
+    long_field: productName
+    repeat_unit: "参数校验件"
+    min_length: 65
+    expect_code: 40000
+
+report_reject:
+  - id: report-qty-zero
+    desc: 报工数量为 0（@Min 1），应拒绝
+    body: {reportQty: 0, worker: "参数校验"}
+    expect_code: 40000
+
+  - id: report-qty-negative
+    desc: 报工数量为负数，应拒绝
+    body: {reportQty: -5, worker: "参数校验"}
+    expect_code: 40000
+
+  - id: report-qty-too-large
+    desc: 报工数量超过上限 1000000（@Max），应拒绝
+    body: {reportQty: 1000001, worker: "参数校验"}
+    expect_code: 40000
+
+  - id: report-missing-worker
+    desc: 未填报工人（@NotBlank），应拒绝
+    body: {reportQty: 10}
+    expect_code: 40000
+
+  - id: report-missing-qty
+    desc: 未填报工数量（@NotNull），应拒绝
+    body: {worker: "参数校验"}
+    expect_code: 40000

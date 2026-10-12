@@ -1,0 +1,32 @@
+# 开发环境：主库 mes
+# 数据库口令一律走环境变量，仓库内不落明文；本地默认值仅为便于开箱运行，请按本机实际情况调整
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MES_DB_HOST:127.0.0.1}:${MES_DB_PORT:3306}/mes?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
+    username: ${MES_DB_USER:root}
+    password: ${MES_DB_PASSWORD:123456}
+    hikari:
+      pool-name: mesHikariPool
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
+      idle-timeout: 600000
+      max-lifetime: 1740000
+
+mybatis-plus:
+  configuration:
+    # 开发期打印 SQL，便于对照脚本断言；测试/生产 profile 关掉
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    com.xwj.mes: debug
+
+# 测试库连接信息：M2 阶段 pytest 直连 mes_test 做落库校验时使用。
+# 本阶段仅登记，不建立连接池，避免无用连接占用。
+mes:
+  test-data:
+    url: jdbc:mysql://${MES_DB_HOST:127.0.0.1}:${MES_DB_PORT:3306}/mes_test?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${MES_DB_USER:root}
+    password: ${MES_DB_PASSWORD:123456}

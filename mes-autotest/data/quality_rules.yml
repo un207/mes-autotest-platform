@@ -1,0 +1,104 @@
+# 质检业务规则用例数据（数据驱动）
+
+# ---------------------------------------------------------------------------
+# 结论推导：不良数 > 0 即判 FAIL，均由系统推导，不允许人工背离
+# ---------------------------------------------------------------------------
+result_derive:
+  - id: all-pass
+    desc: 不良数为 0，自动判合格
+    inspect_type: IQC
+    inspect_qty: 20
+    qualified: 20
+    defective: 0
+    expect_result: PASS
+    expect_defect_code: null
+
+  - id: defect-derived-fail
+    desc: 不良数大于 0，自动判不合格
+    inspect_type: IPQC
+    inspect_qty: 20
+    qualified: 18
+    defective: 2
+    defect_code: "D-测试-尺寸超差"
+    expect_result: FAIL
+    expect_defect_code: "D-测试-尺寸超差"
+
+  - id: qualified-omitted
+    desc: 只传不良数，合格数自动推算
+    inspect_type: FQC
+    inspect_qty: 50
+    defective: 3
+    defect_code: "D-测试-毛刺"
+    expect_result: FAIL
+    expect_qualified: 47
+    expect_defective: 3
+
+  - id: defective-omitted
+    desc: 只传合格数，不良数自动推算为 0，判合格
+    inspect_type: OQC
+    inspect_qty: 30
+    qualified: 30
+    expect_result: PASS
+    expect_qualified: 30
+    expect_defective: 0
+
+# ---------------------------------------------------------------------------
+# 拒绝场景
+# ---------------------------------------------------------------------------
+reject_cases:
+  - id: defect-without-code
+    desc: 存在不良品但未填不良代码，应拒绝（否则追溯链在不良环节断裂）
+    inspect_type: IPQC
+    inspect_qty: 10
+    qualified: 8
+    defective: 2
+    expect_code: 40000
+
+  - id: result-contradicts-quantity
+    desc: 人工传的结论与数量矛盾（不良 2 个却填合格），应拒绝
+    inspect_type: IPQC
+    inspect_qty: 10
+    qualified: 8
+    defective: 2
+    defect_code: "D-测试-矛盾"
+    result: PASS
+    expect_code: 40000
+
+  - id: qty-mismatch
+    desc: 合格数 + 不良数 不等于检验数量，应拒绝
+    inspect_type: IPQC
+    inspect_qty: 10
+    qualified: 5
+    defective: 3
+    defect_code: "D-测试-不守恒"
+    expect_code: 40000
+
+  - id: qualified-exceeds-inspect
+    desc: 合格数大于检验数量，应拒绝
+    inspect_type: IPQC
+    inspect_qty: 10
+    qualified: 15
+    expect_code: 40000
+
+  - id: missing-inspect-type
+    desc: 缺检验类型，应拒绝
+    # omit 里写的是「请求体的字段名」（camelCase），不是 YAML 内部的下划线命名
+    omit: [inspectType]
+    inspect_qty: 10
+    qualified: 10
+    expect_code: 40000
+
+  - id: missing-inspector
+    desc: 缺质检员，应拒绝
+    omit: [inspector]
+    inspect_type: IQC
+    inspect_qty: 10
+    qualified: 10
+    expect_code: 40000
+
+  - id: inspect-qty-zero
+    desc: 检验数量为 0，应拒绝
+    inspect_type: IQC
+    inspect_qty: 0
+    qualified: 0
+    expect_code: 40000

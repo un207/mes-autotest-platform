@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>迷你 MES 系统 · 项目展示</title>
+<style>
+  :root {
+    --bg: #F7F8FA;
+    --surface: #FFFFFF;
+    --surface-2: #F1F3F6;
+    --border: #DDE2E8;
+    --border-strong: #C3CBD4;
+    --text: #1B2027;
+    --text-2: #5B6572;
+    --text-3: #8A94A1;
+    --blue: #2F6FEB;
+    --blue-bg: #EAF1FE;
+    --blue-text: #1A4FA8;
+    --purple: #6E56CF;
+    --purple-bg: #F0EDFB;
+    --purple-text: #4A3A93;
+    --green: #1A7F37;
+    --green-bg: #E7F5EC;
+    --red: #CF222E;
+    --red-bg: #FDECEC;
+    --amber: #9A6700;
+    --amber-bg: #FBF3E0;
+    --teal: #0F766E;
+    --teal-bg: #E4F5F2;
+    --mono: ui-monospace, "SF Mono", Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout { display: flex; max-width: 1280px; margin: 0 auto; align-items: flex-start; }
+
+  nav {
+    position: sticky; top: 0; flex-shrink: 0;
+    width: 208px; height: 100vh; overflow-y: auto;
+    padding: 28px 16px 40px 24px;
+    border-right: 1px solid var(--border);
+  }
+  nav .brand { font-size: 13px; font-weight: 600; letter-spacing: .02em; margin-bottom: 4px; }
+  nav .brand-sub { font-size: 12px; color: var(--text-3); margin-bottom: 22px; }
+  nav a {
+    display: block; padding: 7px 10px; margin-bottom: 2px;
+    font-size: 13px; color: var(--text-2); text-decoration: none;
+    border-radius: 6px; border-left: 2px solid transparent;
+    transition: background .12s, color .12s;
+  }
+  nav a:hover { background: var(--surface-2); color: var(--text); }
+  nav a.active { background: var(--blue-bg); color: var(--blue-text); border-left-color: var(--blue); font-weight: 500; }
+  nav .nav-num { color: var(--text-3); font-family: var(--mono); font-size: 11px; margin-right: 6px; }
+
+  main { flex: 1; min-width: 0; padding: 40px 40px 120px; }
+
+  header.hero { padding-bottom: 30px; border-bottom: 1px solid var(--border); margin-bottom: 40px; }
+  header.hero h1 { font-size: 27px; font-weight: 600; margin: 0 0 12px; letter-spacing: -.01em; }
+  header.hero .lede { font-size: 15px; color: var(--text-2); max-width: 760px; margin: 0 0 22px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 20px; }
+  .chip {
+    font-size: 12px; padding: 3px 10px; border-radius: 999px;
+    background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border);
+  }
+  .chip.ok { background: var(--green-bg); color: var(--green); border-color: #BEE3C9; }
+  .chip.b { background: var(--blue-bg); color: var(--blue-text); border-color: #C8DBFB; }
+
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; }
+  .metric {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+  }
+  .metric .k { font-size: 12px; color: var(--text-3); margin-bottom: 6px; }
+  .metric .v { font-size: 25px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
+  .metric .v small { font-size: 13px; font-weight: 400; color: var(--text-3); margin-left: 3px; }
+  .metric .v.g { color: var(--green); }
+  .metric .v.a { color: var(--amber); }
+  .metric .v.r { color: var(--red); }
+
+  section { margin-bottom: 52px; scroll-margin-top: 20px; }
+  h2 {
+    font-size: 19px; font-weight: 600; margin: 0 0 6px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  }
+  h2 .n { color: var(--text-3); font-family: var(--mono); font-size: 13px; font-weight: 400; margin-right: 8px; }
+  h3 { font-size: 15px; font-weight: 600; margin: 26px 0 10px; }
+  .sub { font-size: 13px; color: var(--text-2); margin: 0 0 22px; max-width: 820px; }
+  p { margin: 0 0 12px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 20px 22px;
+  }
+  .card + .card { margin-top: 14px; }
+  .card h4 { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+  .card p:last-child { margin-bottom: 0; }
+
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
+
+  .badge {
+    display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    font-weight: 500; vertical-align: middle;
+  }
+  .badge.b { background: var(--blue-bg); color: var(--blue-text); }
+  .badge.p { background: var(--purple-bg); color: var(--purple-text); }
+  .badge.g { background: var(--green-bg); color: var(--green); }
+  .badge.a { background: var(--amber-bg); color: var(--amber); }
+  .badge.r { background: var(--red-bg); color: var(--red); }
+  .badge.t { background: var(--teal-bg); color: var(--teal); }
+  .badge.gray { background: var(--surface-2); color: var(--text-2); }
+
+  /* --- 三层拼图 --- */
+  .puzzle { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+  .pz { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; background: var(--surface); }
+  .pz .ph { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+  .pz .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .pz .pt { font-size: 14px; font-weight: 600; }
+  .pz .pd { font-size: 13px; color: var(--text-2); margin: 0; }
+  .pz.done { border-color: #BEE3C9; background: linear-gradient(0deg, var(--green-bg), var(--surface) 55%); }
+  .pz.todo { opacity: .82; }
+
+  /* --- 表格 --- */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; font-weight: 600; font-size: 12px; color: var(--text-2);
+    padding: 9px 12px; border-bottom: 1px solid var(--border-strong); white-space: nowrap;
+    background: var(--surface);
+  }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #FAFBFC; }
+  .tbl-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .tbl-scroll { overflow-x: auto; }
+
+  .m {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    padding: 2px 7px; border-radius: 5px; white-space: nowrap; display: inline-block;
+  }
+  .m.get { background: var(--blue-bg); color: var(--blue-text); }
+  .m.post { background: var(--green-bg); color: var(--green); }
+  .m.put { background: var(--amber-bg); color: var(--amber); }
+  code {
+    font-family: var(--mono); font-size: 12px;
+    background: var(--surface-2); padding: 1px 5px; border-radius: 4px; color: #3A4552;
+  }
+  .path { font-family: var(--mono); font-size: 12px; color: #3A4552; word-break: break-all; }
+
+  .rules { list-style: none; padding: 0; margin: 0; }
+  .rules li {
+    position: relative; padding: 7px 0 7px 22px; font-size: 13px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .rules li:last-child { border-bottom: none; }
+  .rules li::before {
+    content: ""; position: absolute; left: 5px; top: 15px;
+    width: 5px; height: 5px; border-radius: 50%; background: var(--border-strong);
+  }
+  .rules li strong { font-weight: 600; }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
+  .tab {
+    font-family: var(--sans); font-size: 13px; padding: 6px 14px; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    color: var(--text-2); transition: all .12s;
+  }
+  .tab:hover { border-color: var(--border-strong); color: var(--text); }
+  .tab.on { background: var(--text); border-color: var(--text); color: #fff; font-weight: 500; }
+  .tab .c { font-family: var(--mono); font-size: 11px; opacity: .65; margin-left: 5px; }
+
+  .search {
+    width: 100%; max-width: 340px; padding: 9px 14px; font-size: 13px;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+    font-family: var(--sans); color: var(--text); margin-bottom: 14px;
+  }
+  .search:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-bg); }
+  .empty { padding: 30px; text-align: center; color: var(--text-3); font-size: 13px; }
+
+  .flow { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; overflow-x: auto; }
+  .flow svg { display: block; min-width: 620px; }
+
+  .note {
+    border-left: 3px solid var(--blue); background: var(--blue-bg);
+    padding: 13px 16px; border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 13px; color: #24405F; margin: 16px 0 0;
+  }
+  .note.warn { border-left-color: var(--amber); background: var(--amber-bg); color: #5B4008; }
+  .note strong { font-weight: 600; }
+
+  .layer { display: flex; flex-direction: column; gap: 10px; }
+  .lyr {
+    border-radius: var(--radius); padding: 13px 18px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    flex-wrap: wrap;
+  }
+  .lyr .lt { font-size: 13px; font-weight: 600; }
+  .lyr .ld { font-size: 12px; color: var(--text-2); }
+  .lyr.l0 { background: var(--surface-2); border: 1px solid var(--border); }
+  .lyr.l1 { background: var(--purple-bg); border: 1px solid #D8D0F5; }
+  .lyr.l2 { background: var(--blue-bg); border: 1px solid #C8DBFB; }
+  .lyr.l3 { background: var(--teal-bg); border: 1px solid #BFE5E0; }
+
+  footer {
+    border-top: 1px solid var(--border); padding-top: 20px;
+    font-size: 12px; color: var(--text-3);
+  }
+
+  .kbd { font-family: var(--mono); font-size: 11px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border); }
+
+  @media (max-width: 960px) {
+    nav { display: none; }
+    main { padding: 28px 20px 80px; }
+  }
+  @media print {
+    nav, .tabs, .search { display: none; }
+    body { background: #fff; }
+    main { padding: 0; }
+    section { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav>
+  <div class="brand">迷你 MES 系统</div>
+  <div class="brand-sub">M1 里程碑 · 项目展示</div>
+  <a href="#intro"><span class="nav-num">01</span>这是什么</a>
+  <a href="#puzzle"><span class="nav-num">02</span>三块拼图</a>
+  <a href="#arch"><span class="nav-num">03</span>怎么搭的</a>
+  <a href="#data"><span class="nav-num">04</span>数据模型</a>
+  <a href="#api"><span class="nav-num">05</span>接口清单</a>
+  <a href="#rules"><span class="nav-num">06</span>业务规则</a>
+  <a href="#verify"><span class="nav-num">07</span>验证结果</a>
+  <a href="#next"><span class="nav-num">08</span>进度与边界</a>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1>迷你 MES 系统</h1>
+  <p class="lede">
+    一个制造车间的简化版管理系统。工人拿到工单去生产、报数量、送质检，
+    原料要能查到批次来源，设备数据要能自动采集 —— 这套流程在真实工厂里由 MES（制造执行系统）承担，
+    这里做的是它的最小可用版本。
+  </p>
+  <div class="chips">
+    <span class="chip b">Spring Boot 3.2</span>
+    <span class="chip b">Java 17</span>
+    <span class="chip b">MyBatis-Plus 3.5.9</span>
+    <span class="chip b">MySQL 5.7</span>
+    <span class="chip ok">M1 已完成并验证</span>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="k">数据表</div><div class="v">6</div></div>
+    <div class="metric"><div class="k">接口地址</div><div class="v">24</div></div>
+    <div class="metric"><div class="k">接口操作</div><div class="v">29</div></div>
+    <div class="metric"><div class="k">接口验证</div><div class="v g">27/27</div></div>
+    <div class="metric"><div class="k">单元测试</div><div class="v g">12/12</div></div>
+  </div>
+</header>
+
+<section id="intro">
+  <h2><span class="n">01</span>这是什么</h2>
+  <p class="sub">一句话讲清定位，以及它在整个求职项目里扮演什么角色。</p>
+
+  <div class="card">
+    <h4>一个制造车间的最小可用管理系统</h4>
+    <p>
+      工厂接了一张订单要生产 500 个法兰盘。接下来发生的事是这样的：下单 → 派给某条产线 →
+      工人每做一批就报一次数量（做了多少、合格多少）→ 质检员抽检并记录不良原因 →
+      如果出现质量问题，要能回溯到「这批不合格品用的是哪一批原料、什么时候进的厂、谁检的」。
+      设备那边还会不断上报产量、温度等数据，系统得接住。
+    </p>
+    <p>
+      MES 就是管这条链路的系统，是车间和上层 ERP 之间的执行层。这里做的是一套完整但精简的版本 ——
+      <strong>6 张表、24 个接口</strong>，把工单、报工、质检、物料追溯、设备数采五件事跑通。
+    </p>
+  </div>
+
+  <div class="grid-2" style="margin-top:14px">
+    <div class="card">
+      <h4>给谁用的</h4>
+      <ul class="rules">
+        <li><strong>工单员</strong> —— 建工单、派工、关闭工单</li>
+        <li><strong>产线工人</strong> —— 报工，登记做了多少、合格多少</li>
+        <li><strong>质检员</strong> —— 录入检验结果和不良原因</li>
+        <li><strong>仓管</strong> —— 原料批次建档、绑定工单、出货</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>在求职项目里的位置</h4>
+      <p style="font-size:13px">
+        整套求职作品分两块：<strong>这块是「被测对象」</strong>——一个真实的业务系统；
+        另一半是<strong>自动化测试平台</strong>（还没做），用脚本去测这个系统。
+      </p>
+      <p style="font-size:13px;margin-bottom:0">
+        分开做是刻意的：测试平台与业务系统混在一起，就变成「自己测自己」，逻辑上不成立。
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="puzzle">
+  <h2><span class="n">02</span>三块拼图</h2>
+  <p class="sub">整个项目由三部分组成，M1 只完成了第一块。这样划分是为了让「开发能力」和「测试能力」各自独立成立。</p>
+
+  <div class="puzzle">
+    <div class="pz done">
+      <div class="ph"><span class="dot" style="background:var(--green)"></span><span class="pt">① 迷你 MES 系统</span></div>
+      <p class="pd">业务系统本体。工单 / 报工 / 质检 / 物料追溯 / 设备数采。用 Spring Boot + MySQL 实现。<br><span class="badge g" style="margin-top:8px">M1 已完成</span></p>
+    </div>
+    <div class="pz todo">
+      <div class="ph"><span class="dot" style="background:var(--blue)"></span><span class="pt">② 自动化测试平台</span></div>
+      <p class="pd">用 Python + pytest 写脚本，自动调用上面那套接口，检查返回结果和数据库里的数据对不对。<br><span class="badge gray" style="margin-top:8px">M2–M3 待做</span></p>
+    </div>
+    <div class="pz todo">
+      <div class="ph"><span class="dot" style="background:var(--amber)"></span><span class="pt">③ 设备模拟器</span></div>
+      <p class="pd">用 pymodbus 模拟一台产线设备，按工业协议 Modbus 上报数据，并故意制造异常数据。<br><span class="badge gray" style="margin-top:8px">M4 待做</span></p>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>为什么强调「自动化测试」这条线：</strong>求职方向是自动化测试工程师 / MES 实施工程师（双线并行）。
+    这块被测系统证明的是「懂业务、能写后端」；后面那套测试平台证明的是「会搭自动化框架」。
+    两条线合起来，简历上才既扛得住技术追问，又对得上 JD。
+  </div>
+</section>
+
+<section id="arch">
+  <h2><span class="n">03</span>怎么搭的</h2>
+  <p class="sub">按业务域分包（不是按技术层分包），一层管一件事，职责边界清楚。</p>
+
+  <div class="layer">
+    <div class="lyr l0">
+      <div><div class="lt">请求入口</div><div class="ld">自动化测试脚本 · Swagger 页面 · 未来的管理界面</div></div>
+      <div class="ld">HTTP</div>
+    </div>
+    <div class="lyr l1">
+      <div><div class="lt">Controller 层 —— 24 个接口地址</div><div class="ld">只负责收参数、校验格式、把结果包成统一格式返回</div></div>
+      <div class="ld">不含业务逻辑</div>
+    </div>
+    <div class="lyr l2">
+      <div><div class="lt">Service 层 —— 业务规则都在这里</div><div class="ld">工单状态机 · 数量守恒 · 质检结论推导 · 数采质量判定</div></div>
+      <div class="ld">规则集中，好测</div>
+    </div>
+    <div class="lyr l3">
+      <div><div class="lt">Mapper 层 —— 数据库访问</div><div class="ld">查询条件与统计聚合下推到 SQL；防误删全表；逻辑删除；写操作用行锁</div></div>
+      <div class="ld">MyBatis-Plus</div>
+    </div>
+    <div class="lyr l0">
+      <div><div class="lt">MySQL 5.7 —— 双库隔离</div><div class="ld"><code>mes</code> 存业务数据 · <code>mes_test</code> 给测试脚本造数用</div></div>
+      <div class="ld">6 张表 / 库</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>为什么业务域分包：</strong>包结构按 <code>workorder</code> / <code>quality</code> / <code>material</code> /
+    <code>device</code> / <code>stats</code> 划分，而不是按 <code>controller</code> / <code>service</code> / <code>mapper</code> 分层。
+    好处是以后要加「设备管理」模块，只需新增一个包，不用去动既有框架代码。
+  </div>
+</section>
+
+<section id="data">
+  <h2><span class="n">04</span>数据模型</h2>
+  <p class="sub">6 张表。工单是中心 —— 报工、质检、批次、追溯都通过「工单号」挂在它下面。</p>
+
+  <div class="flow">
+    <svg viewBox="0 0 880 420" width="100%" role="img" aria-label="数据表关系图">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#8A94A1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+        <marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#C3CBD4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <g>
+        <rect x="190" y="170" width="220" height="68" rx="10" fill="#EAF1FE" stroke="#2F6FEB" stroke-width="1"/>
+        <text x="300" y="196" text-anchor="middle" font-family="system-ui,sans-serif" font-size="15" font-weight="600" fill="#1A4FA8">生产工单</text>
+        <text x="300" y="217" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#2F6FEB">mes_work_order</text>
+      </g>
+
+      <path d="M210 170 L168 106" fill="none" stroke="#8A94A1" stroke-width="1.4" marker-end="url(#ar)"/>
+      <path d="M350 170 L400 106" fill="none" stroke="#8A94A1" stroke-width="1.4" marker-end="url(#ar)"/>
+      <path d="M210 238 L168 300" fill="none" stroke="#8A94A1" stroke-width="1.4" marker-end="url(#ar)"/>
+      <path d="M350 238 L400 300" fill="none" stroke="#8A94A1" stroke-width="1.4" marker-end="url(#ar)"/>
+      <path d="M230 328 L330 328" fill="none" stroke="#C3CBD4" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#ar2)"/>
+
+      <g>
+        <rect x="60" y="50" width="170" height="56" rx="9" fill="#E7F5EC" stroke="#1A7F37" stroke-width="0.8"/>
+        <text x="145" y="73" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#136B2C">报工记录</text>
+        <text x="145" y="92" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#1A7F37">mes_work_report</text>
+      </g>
+      <g>
+        <rect x="330" y="50" width="170" height="56" rx="9" fill="#F0EDFB" stroke="#6E56CF" stroke-width="0.8"/>
+        <text x="415" y="73" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#4A3A93">质检记录</text>
+        <text x="415" y="92" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#6E56CF">…quality_inspection</text>
+      </g>
+      <g>
+        <rect x="60" y="300" width="170" height="56" rx="9" fill="#E4F5F2" stroke="#0F766E" stroke-width="0.8"/>
+        <text x="145" y="323" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#0B5C55">物料批次</text>
+        <text x="145" y="342" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#0F766E">mes_material_batch</text>
+      </g>
+      <g>
+        <rect x="330" y="300" width="170" height="56" rx="9" fill="#F1F3F6" stroke="#5B6572" stroke-width="0.8"/>
+        <text x="415" y="323" text-anchor="middle" font-family="system-ui,sans-serif" font-size="14" font-weight="600" fill="#3A4552">追溯流水</text>
+        <text x="415" y="342" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#5B6572">mes_trace_record</text>
+      </g>
+
+      <g>
+        <rect x="610" y="170" width="215" height="68" rx="10" fill="#FBF3E0" stroke="#9A6700" stroke-width="1" stroke-dasharray="6 4"/>
+        <text x="717" y="196" text-anchor="middle" font-family="system-ui,sans-serif" font-size="15" font-weight="600" fill="#7A5200">设备数采</text>
+        <text x="717" y="217" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#9A6700">mes_device_data</text>
+      </g>
+
+      <text x="515" y="180" font-family="system-ui,sans-serif" font-size="11.5" fill="#8A94A1">独立表，不挂工单</text>
+      <text x="515" y="197" font-family="system-ui,sans-serif" font-size="11.5" fill="#8A94A1">靠「设备编号」与报工</text>
+      <text x="515" y="214" font-family="system-ui,sans-serif" font-size="11.5" fill="#8A94A1">形成弱关联</text>
+
+      <text x="287" y="325" font-family="system-ui,sans-serif" font-size="11" fill="#8A94A1">批次号</text>
+      <text x="150" y="152" font-family="system-ui,sans-serif" font-size="11" fill="#8A94A1">工单号</text>
+      <text x="372" y="152" font-family="system-ui,sans-serif" font-size="11" fill="#8A94A1">工单号</text>
+      <text x="124" y="272" font-family="system-ui,sans-serif" font-size="11" fill="#8A94A1">工单号</text>
+      <text x="376" y="272" font-family="system-ui,sans-serif" font-size="11" fill="#8A94A1">工单号</text>
+    </svg>
+  </div>
+
+  <h3>六张表各管什么</h3>
+  <div class="tbl-wrap"><div class="tbl-scroll">
+    <table>
+      <thead>
+        <tr><th style="width:186px">表名</th><th style="width:88px">中文</th><th>职责与关键字段</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>mes_work_order</code></td><td>生产工单</td>
+          <td>主线单据。记录产品、计划数量、累计已做/合格/不良数量、当前状态、产线车间、计划与实际的开完工时间。<br><span class="badge b">中心表</span> 唯一键 <code>order_no</code></td>
+        </tr>
+        <tr>
+          <td><code>mes_work_report</code></td><td>报工记录</td>
+          <td>一笔报工一行：本次做了多少、合格多少、不良多少、谁报的、在哪台设备上报的。一个工单可以有很多笔。</td>
+        </tr>
+        <tr>
+          <td><code>mes_quality_inspection</code></td><td>质检记录</td>
+          <td>一次检验一行：检验类型（来料/过程/完工/出货）、检验数量、合格与不良数量、<strong>不良代码</strong>、结论、质检员。</td>
+        </tr>
+        <tr>
+          <td><code>mes_material_batch</code></td><td>物料批次</td>
+          <td>一批原料一行：物料编码、供应商、数量、入库时间、绑定到哪个工单、当前状态（在库/在用/已消耗/冻结）。</td>
+        </tr>
+        <tr>
+          <td><code>mes_trace_record</code></td><td>追溯流水</td>
+          <td><strong>只增不改</strong>的流水账。每发生一次入库、投产、检验、出货就记一行，正反追溯全靠它。</td>
+        </tr>
+        <tr>
+          <td><code>mes_device_data</code></td><td>设备数采</td>
+          <td>设备上报的产量 / 运行状态 / 温度。同时存原始字符串和解析后的数值，并标记这条数据<strong>是否可信</strong>。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div></div>
+
+  <div class="note">
+    <strong>两张表设计得比较特别，值得单独说：</strong>
+    <br>① <code>mes_trace_record</code> 只增不改 —— 追溯的价值就在于不可篡改，如果允许修改，追溯结论就不可信了。
+    <br>② <code>mes_device_data</code> 同时保留 <code>raw_value</code>（原始上报串）和 <code>metric_value</code>（解析后数值）。
+    脏数据解析不出数值时，原始串仍在，事后能查「设备当时到底发了什么」，不会被静默丢掉。
+  </div>
+</section>
+
+<section id="api">
+  <h2><span class="n">05</span>接口清单</h2>
+  <p class="sub">
+    共 <strong>24 个接口地址、29 个操作</strong>（同一个地址有的同时支持「查询」和「新建」两种操作）。
+    下面是每个操作干什么的人话说明，可以按业务域筛选或搜索。
+  </p>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-g="all">全部<span class="c">29</span></button>
+    <button class="tab" data-g="工单">工单<span class="c">7</span></button>
+    <button class="tab" data-g="质量">质量<span class="c">5</span></button>
+    <button class="tab" data-g="物料">物料<span class="c">6</span></button>
+    <button class="tab" data-g="追溯">追溯<span class="c">2</span></button>
+    <button class="tab" data-g="数采">数采<span class="c">4</span></button>
+    <button class="tab" data-g="统计">统计<span class="c">3</span></button>
+    <button class="tab" data-g="自检">自检<span class="c">2</span></button>
+  </div>
+  <input class="search" id="q" type="text" placeholder="输入关键词搜索，例如：工单、温度、追溯">
+
+  <div class="tbl-wrap"><div class="tbl-scroll">
+    <table id="apiTbl">
+      <thead>
+        <tr><th style="width:66px">方法</th><th style="width:300px">地址</th><th>这个接口干什么</th></tr>
+      </thead>
+      <tbody id="apiBody"></tbody>
+    </table>
+  </div></div>
+
+  <div class="note">
+    <strong>方法颜色怎么读：</strong>
+    <span class="m get">GET</span> 查数据（不会改任何东西）·
+    <span class="m post">POST</span> 新建一条记录 ·
+    <span class="m put">PUT</span> 改已有记录的状态或字段。
+    看颜色就知道这个操作会不会动数据。
+  </div>
+</section>
+
+<section id="rules">
+  <h2><span class="n">06</span>业务规则</h2>
+  <p class="sub">
+    这是整个系统最值钱的部分 —— 也是下一步做自动化测试时的用例来源。
+    下面几条规则全部写在代码里、跑在真实请求上验证过，不是设想。
+  </p>
+
+  <h3>① 工单状态机</h3>
+  <p class="sub" style="margin-bottom:14px">工单只能按固定路线走，跳步会被拒绝。</p>
+
+  <div class="flow">
+    <svg viewBox="0 0 900 175" width="100%" role="img" aria-label="工单状态流转图">
+      <defs>
+        <marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#5B6572" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <path d="M285 85 C 285 45, 375 45, 375 85" fill="none" stroke="#8A94A1" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#ar3)"/>
+      <text x="330" y="34" text-anchor="middle" font-size="11.5" fill="#8A94A1">可以再次派工改产线</text>
+
+      <g>
+        <rect x="30" y="85" width="150" height="64" rx="10" fill="#F1F3F6" stroke="#8A94A1" stroke-width="0.8"/>
+        <text x="105" y="112" text-anchor="middle" font-size="15" font-weight="600" fill="#3A4552">新建</text>
+        <text x="105" y="132" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#8A94A1">NEW</text>
+      </g>
+      <path d="M180 117 L240 117" fill="none" stroke="#5B6572" stroke-width="1.6" marker-end="url(#ar3)"/>
+      <text x="210" y="104" text-anchor="middle" font-size="11.5" fill="#5B6572">派工</text>
+
+      <g>
+        <rect x="240" y="85" width="180" height="64" rx="10" fill="#EAF1FE" stroke="#2F6FEB" stroke-width="0.8"/>
+        <text x="330" y="112" text-anchor="middle" font-size="15" font-weight="600" fill="#1A4FA8">已派工</text>
+        <text x="330" y="132" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#2F6FEB">DISPATCHED</text>
+      </g>
+      <path d="M420 117 L480 117" fill="none" stroke="#5B6572" stroke-width="1.6" marker-end="url(#ar3)"/>
+      <text x="450" y="104" text-anchor="middle" font-size="11.5" fill="#5B6572">首次报工</text>
+
+      <g>
+        <rect x="480" y="85" width="180" height="64" rx="10" fill="#EAF1FE" stroke="#2F6FEB" stroke-width="0.8"/>
+        <text x="570" y="112" text-anchor="middle" font-size="15" font-weight="600" fill="#1A4FA8">生产中</text>
+        <text x="570" y="132" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#2F6FEB">IN_PROGRESS</text>
+      </g>
+      <path d="M660 117 L720 117" fill="none" stroke="#5B6572" stroke-width="1.6" marker-end="url(#ar3)"/>
+      <text x="690" y="104" text-anchor="middle" font-size="11.5" fill="#5B6572">关闭</text>
+
+      <g>
+        <rect x="720" y="85" width="150" height="64" rx="10" fill="#F1F3F6" stroke="#5B6572" stroke-width="0.8"/>
+        <text x="795" y="112" text-anchor="middle" font-size="15" font-weight="600" fill="#3A4552">已关闭</text>
+        <text x="795" y="132" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#5B6572">CLOSED</text>
+      </g>
+    </svg>
+  </div>
+
+  <ul class="rules" style="margin-top:16px">
+    <li><strong>只有「已派工」和「生产中」可以报工</strong> —— 没派工就先报工，会被拒绝（错误码 40900）</li>
+    <li><strong>「新建」状态的工单不能关闭</strong> —— 还没派工就关，等于凭空关闭一张没开工的单子</li>
+    <li><strong>「已关闭」是终态</strong> —— 不能重复关闭，也不能再报工</li>
+    <li><strong>「已派工」可以再次派工</strong> —— 用于改产线或补计划时间；「生产中」之后就不允许了</li>
+    <li><strong>「已派工」也可以直接关闭</strong> —— 比如产线临时取消了，不用先报一次工</li>
+  </ul>
+
+  <h3>② 数量守恒 —— 系统的第一道防线</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>规则</h4>
+      <ul class="rules">
+        <li><strong>合格数 + 不良数 必须等于 报工数</strong>，对不上直接拒绝（错误码 40000）</li>
+        <li>只传其中一个，另一个<strong>自动推算</strong>；两个都不传，按「全部合格」处理</li>
+        <li><strong>累计报工数不得超过计划数</strong> —— 计划 100 个，已经报了 90，再报 20 会被拦截（错误码 40900）</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>为什么要拦</h4>
+      <p style="font-size:13px">
+        这类数字错误在车间很常见：手滑多打一个 0、或者把「合格 96」记成「报工 96」。
+        如果不拦，数据库里就会留下「报工 100 个、合格 60 个」这种<strong>无法追溯的脏数据</strong>，
+        后面的良率统计、成本核算全部失真。
+      </p>
+      <p style="font-size:13px;margin-bottom:0">
+        宁可当场报错让人改，也不让脏数据进库 —— 这是 MES 类系统的基本要求。
+      </p>
+    </div>
+  </div>
+
+  <h3>③ 质检结论由数量推导，不允许人工改</h3>
+  <div class="card">
+    <ul class="rules">
+      <li><strong>不良数 &gt; 0 就自动判为「不合格」</strong>，不良数为 0 自动判「合格」—— 结论由系统算，不是质检员填的</li>
+      <li>如果人工传的结论和数量矛盾（比如不良 10 个却填「合格」），<strong>直接拒绝</strong>（错误码 40000）</li>
+      <li><strong>有不良品时，不良代码必填</strong> —— 不填的话追溯链会在不良这个环节断掉，事后查不出是什么原因导致的不良</li>
+      <li>质检关联的批次，如果已绑定别的工单，<strong>拒绝</strong>（错误码 40900）—— 防止把 A 工单的料记到 B 工单的质检上</li>
+    </ul>
+  </div>
+
+  <h3>④ 设备数据的三层质量把关</h3>
+  <p class="sub" style="margin-bottom:14px">
+    设备上报的数据不能照单全收。每来一条数据过三道关，判定结果随数据一起存下来。
+  </p>
+  <div class="grid-3">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="badge r">第一关 · 异常</span>
+      </div>
+      <p style="font-size:13px">上报的值<strong>根本解析不出数字</strong>（比如 <code>###</code>、空串、乱码）。</p>
+      <p style="font-size:13px;margin-bottom:0">处理：标记为异常，<strong>数值不入账</strong>，但原始字符串保留下来备查。</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="badge a">第二关 · 可疑</span>
+      </div>
+      <p style="font-size:13px">数值能解析，但<strong>超出合理工况区间</strong>（温度不在 -50~200℃、产量不在 0~100 万、状态码不在 0~10）。</p>
+      <p style="font-size:13px;margin-bottom:0">处理：标记为可疑，<strong>数值仍留档</strong> —— 也许确实是异常工况，先记下再判断。</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="badge a">第三关 · 可疑</span>
+      </div>
+      <p style="font-size:13px">采集时间<strong>比当前时间还晚 5 分钟以上</strong>。</p>
+      <p style="font-size:13px;margin-bottom:0">处理：标记为可疑，多半是<strong>设备时钟不准</strong>。时间错乱会让产量统计按天分错组。</p>
+    </div>
+  </div>
+  <div class="note warn">
+    <strong>关键取舍：脏数据一律留痕，绝不静默丢弃。</strong>
+    现场出问题时最怕的就是「数据悄悄没了、事后查不到」。
+    所以这三类数据都进库、都带标记，另有一个专门的接口 <code>/api/device-data/abnormal</code> 能把它们全部捞出来。
+  </div>
+
+  <h3>⑤ 一个批次只能绑一个工单</h3>
+  <div class="card">
+    <ul class="rules">
+      <li>已绑定工单 A 的批次，不能改绑到工单 B（错误码 40900）</li>
+      <li>已出货消耗的批次，不能再绑定，也不能重复出货</li>
+      <li>冻结状态的批次，不允许出货</li>
+    </ul>
+    <p style="font-size:13px;color:var(--text-2);margin:12px 0 0">
+      道理很简单：如果一批料能同时挂在两个工单上，那出了质量问题该追谁？追溯结论就失效了。
+    </p>
+  </div>
+
+  <h3>⑥ 并发安全 —— 报工不会丢数量</h3>
+  <div class="card">
+    <p style="font-size:13px">
+      报工要做「先读出已报数、加上本次、再写回去」这个动作。如果两个工人同时报工，
+      可能两边都读到「已报 90」，各自加 10 写回，结果不是 110 而是 100 —— 少算了 10 个。
+    </p>
+    <p style="font-size:13px;margin-bottom:0">
+      处理办法：派工、报工、关闭三类写操作，都在事务里先对这条工单<strong>加数据库行锁</strong>
+      （<code>SELECT … FOR UPDATE</code>），让它们排队执行。代价是同一张工单的并发写变慢，但数量绝不会算错。
+    </p>
+  </div>
+</section>
+
+<section id="verify">
+  <h2><span class="n">07</span>验证结果</h2>
+  <p class="sub">以下全部是真实跑出来的结果，不是预期值。日期：2026-10-11。</p>
+
+  <div class="grid-3" style="margin-bottom:18px">
+    <div class="card">
+      <div class="k" style="font-size:12px;color:var(--text-3);margin-bottom:6px">单元测试</div>
+      <div style="font-size:25px;font-weight:600;color:var(--green)">12 / 12</div>
+      <p style="font-size:12.5px;color:var(--text-2);margin:6px 0 0">工单状态机 10 项 + 质检结论推导 2 项。不依赖数据库，可随时重跑。</p>
+    </div>
+    <div class="card">
+      <div class="k" style="font-size:12px;color:var(--text-3);margin-bottom:6px">端到端接口验证</div>
+      <div style="font-size:25px;font-weight:600;color:var(--green)">27 / 27</div>
+      <p style="font-size:12.5px;color:var(--text-2);margin:6px 0 0">发真实 HTTP 请求打真实数据库，覆盖完整业务链路 + 6 条负向规则。</p>
+    </div>
+    <div class="card">
+      <div class="k" style="font-size:12px;color:var(--text-3);margin-bottom:6px">构建</div>
+      <div style="font-size:25px;font-weight:600;color:var(--green)">通过</div>
+      <p style="font-size:12.5px;color:var(--text-2);margin:6px 0 0">Maven 编译无错无警告，数据库连通性检查通过（MySQL 5.7.44）。</p>
+    </div>
+  </div>
+
+  <h3>验证通过时数据库里的真实数据</h3>
+  <div class="metrics" style="margin-bottom:16px">
+    <div class="metric"><div class="k">工单总数</div><div class="v">6</div></div>
+    <div class="metric"><div class="k">在产工单</div><div class="v">4</div></div>
+    <div class="metric"><div class="k">已关闭</div><div class="v">2</div></div>
+    <div class="metric"><div class="k">计划总产量</div><div class="v">1220</div></div>
+    <div class="metric"><div class="k">累计报工</div><div class="v">320</div></div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="k">累计合格</div><div class="v">308</div></div>
+    <div class="metric"><div class="k">累计不良</div><div class="v r">12</div></div>
+    <div class="metric"><div class="k">综合良率</div><div class="v g">96.25<small>%</small></div></div>
+    <div class="metric"><div class="k">质检记录</div><div class="v">4</div></div>
+    <div class="metric"><div class="k">数采记录</div><div class="v">13</div></div>
+    <div class="metric"><div class="k">其中异常/可疑</div><div class="v a">6</div></div>
+  </div>
+
+  <h3>端到端验证覆盖了什么</h3>
+  <div class="tbl-wrap"><div class="tbl-scroll">
+    <table>
+      <thead><tr><th style="width:180px">类别</th><th>验证内容</th><th style="width:74px">结果</th></tr></thead>
+      <tbody>
+        <tr><td>健康自检</td><td>服务存活、数据库连通（返回 MySQL 5.7.44）</td><td><span class="badge g">2/2 通过</span></td></tr>
+        <tr><td>主链路</td><td>建工单 → 派工 → 批次绑定 → 报工 → 质检 → 正反向追溯 → 关闭，数量与状态逐项核对</td><td><span class="badge g">11/11 通过</span></td></tr>
+        <tr><td>数量守恒</td><td>合格+不良≠报工数、累计超计划、未派工就报工、关闭后报工 —— 全部被正确拦截</td><td><span class="badge g">4/4 通过</span></td></tr>
+        <tr><td>参数与错误</td><td>必填项缺失、工单不存在、访问不存在的地址，均返回预期错误码</td><td><span class="badge g">3/3 通过</span></td></tr>
+        <tr><td>数采质量</td><td>正常值判 OK、超限温度判可疑且留档、乱码判异常且不入账、批量上报与超量拦截</td><td><span class="badge g">5/5 通过</span></td></tr>
+        <tr><td>统计报表</td><td>总览指标、产量日报、低良率排行三个统计接口返回正确结构</td><td><span class="badge g">2/2 通过</span></td></tr>
+      </tbody>
+    </table>
+  </div></div>
+
+  <div class="note">
+    <strong>为什么这页数据值得看：</strong>良率 96.25% 是系统自己算出来的 ——
+    累计合格 308 ÷ 累计报工 320，跨 6 张表聚合得到。
+    这验证的不只是「接口能返回 200」，而是「业务数字算得对」。
+  </div>
+</section>
+
+<section id="next">
+  <h2><span class="n">08</span>进度与边界</h2>
+  <p class="sub">清楚知道做到哪了、哪些还没做 —— 面试时如实说明边界，比夸大可信得多。</p>
+
+  <h3>里程碑进度</h3>
+  <div class="tbl-wrap"><div class="tbl-scroll">
+    <table>
+      <thead><tr><th style="width:78px">阶段</th><th style="width:190px">内容</th><th>交付物</th><th style="width:104px">状态</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>M1</strong></td><td>迷你 MES 后端</td>
+          <td>工单 / 报工 / 质检 / 追溯 / 数采核心接口 + 6 张表 + 双库隔离</td>
+          <td><span class="badge g">已完成</span></td>
+        </tr>
+        <tr>
+          <td><strong>M2</strong></td><td>pytest 自动化框架</td>
+          <td>requests 封装 + YAML 数据驱动 + 连测试库做「接口返回 + 落库」双重断言</td>
+          <td><span class="badge gray">待开始</span></td>
+        </tr>
+        <tr>
+          <td><strong>M3</strong></td><td>CI + 测试报告</td>
+          <td>GitHub Actions 提交自动跑用例 + Allure 报告 + 通过率趋势</td>
+          <td><span class="badge gray">待开始</span></td>
+        </tr>
+        <tr>
+          <td><strong>M4</strong></td><td>设备模拟 + 管理界面</td>
+          <td>pymodbus 模拟产线设备（含异常注入）+ Vue 管理界面</td>
+          <td><span class="badge gray">待开始</span></td>
+        </tr>
+        <tr>
+          <td><strong>M5</strong></td><td>性能 / 消息队列</td>
+          <td>Locust 压测 / RabbitMQ 设备数据解耦（可选项）</td>
+          <td><span class="badge a">可选</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div></div>
+
+  <h3>已知边界</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>技术上还没做的</h4>
+      <ul class="rules">
+        <li>登录认证与角色权限（管理员 / 工程师两级）尚未实现，目前接口开放访问</li>
+        <li>未做高并发设计 —— 只靠数据库行锁保证单张工单的写入正确，没用分布式锁</li>
+        <li>管理界面还没写，现在看数据靠接口测试页面和一个展示页</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>环境上的实际限制</h4>
+      <ul class="rules">
+        <li>没有接真实产线设备，设备数据由模拟器产生（M4 做）</li>
+        <li>单机部署的学习项目，不在生产环境运行</li>
+        <li>工业协议（Modbus）是零基础开始补的，只用模拟器，不碰真实硬件</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>为什么要把边界写出来：</strong>面试官问到「并发量多少」「接了多少台设备」时，
+    如实说「单机学习项目，没做并发压测，设备侧是模拟的」，比含糊其辞或夸大数字更稳妥 ——
+    一旦被追问细节，夸大的部分会立刻露馅。做过的部分讲清楚，没做的部分不遮掩。
+  </div>
+</section>
+
+<footer>
+  迷你 MES 系统 · M1 里程碑交付展示 &nbsp;|&nbsp; Spring Boot 3.2.12 · Java 17 · MyBatis-Plus 3.5.9 · MySQL 5.7.44
+  &nbsp;|&nbsp; 生成于 2026-10-11
+</footer>
+
+</main>
+</div>
+
+<script>
+const API = [
+  ["工单", "POST", "/api/work-orders", "创建一个工单：登记产品、计划生产数量、车间。创建后状态是「新建」"],
+  ["工单", "GET", "/api/work-orders", "按条件翻页查工单：可按状态、产线、产品编码过滤，也能用工单号或产品名模糊搜"],
+  ["工单", "GET", "/api/work-orders/{orderNo}", "看一个工单的完整信息，包含它下面每一笔报工的明细"],
+  ["工单", "GET", "/api/work-orders/{orderNo}/reports", "只看这个工单的报工流水，不含工单本身的信息"],
+  ["工单", "PUT", "/api/work-orders/{orderNo}/dispatch", "派工：指定产线、车间和计划起止时间，工单从此可以开始报工"],
+  ["工单", "POST", "/api/work-orders/{orderNo}/reports", "报工：登记这次做了多少、合格多少、不良多少、谁做的"],
+  ["工单", "PUT", "/api/work-orders/{orderNo}/close", "关闭工单：这张单子结束，之后不能再报工"],
+  ["质量", "POST", "/api/quality-inspections", "录入一次质检结果：检验类型、检验数量、合格与不良数量、不良代码"],
+  ["质量", "GET", "/api/quality-inspections", "按条件翻页查质检记录：可按工单、批次、检验类型、结论过滤"],
+  ["质量", "GET", "/api/quality-inspections/defect-summary", "不良原因分布统计：各种不良代码各出现多少次、共多少个不良品"],
+  ["质量", "GET", "/api/quality-inspections/defects/{orderNo}", "某个工单的所有不良明细，用于分析这批货到底哪里出了问题"],
+  ["质量", "GET", "/api/quality-inspections/{inspectNo}", "查看单张质检单的详细内容"],
+  ["物料", "POST", "/api/material-batches", "建立物料批次（相当于原料入库）：记录物料、供应商、数量、入库时间"],
+  ["物料", "GET", "/api/material-batches", "按条件翻页查批次：可按物料编码、绑定工单、状态过滤"],
+  ["物料", "GET", "/api/material-batches/by-order/{orderNo}", "查某个工单用了哪些物料批次"],
+  ["物料", "GET", "/api/material-batches/{batchNo}", "查看单个批次的详细信息和当前状态"],
+  ["物料", "PUT", "/api/material-batches/{batchNo}/bind", "把批次绑定到工单上。一个批次只能绑一个工单"],
+  ["物料", "PUT", "/api/material-batches/{batchNo}/outbound", "批次出货：标记为已消耗，并落下一条出货追溯记录"],
+  ["追溯", "GET", "/api/traces/batch/{batchNo}", "正向追溯：这批原料最后流到了哪个工单、中间经过了哪些环节"],
+  ["追溯", "GET", "/api/traces/order/{orderNo}", "反向追溯：这个工单用了哪些原料批次、出过什么不良、完整节点流水"],
+  ["数采", "POST", "/api/device-data", "上报一条设备数据，系统会自动判断这条数据是否可信"],
+  ["数采", "POST", "/api/device-data/batch", "批量上报设备数据，一次最多 200 条，超出会被拒绝"],
+  ["数采", "GET", "/api/device-data", "按条件翻页查数采记录：可按设备、产线、指标、数据质量过滤"],
+  ["数采", "GET", "/api/device-data/abnormal", "只查出被标记为异常或可疑的设备数据，用于排查设备问题"],
+  ["统计", "GET", "/api/stats/overview", "平台总览：工单数、计划与报工总量、综合良率、异常数据条数等一屏看完"],
+  ["统计", "GET", "/api/stats/production", "产量日报：按「日期 × 产线」统计工单数、计划产量、报工量、合格量、良率"],
+  ["统计", "GET", "/api/stats/yield/orders", "低良率工单排行：良率最低的几个工单，用于定位质量问题"],
+  ["自检", "GET", "/api/health", "服务存活检查：只确认进程还在，不碰数据库"],
+  ["自检", "GET", "/api/ready", "就绪检查：连一次数据库，连不上就返回不可用，避免脚本对着半死的服务跑测试"]
+];
+
+const METHOD_CLASS = { GET: "get", POST: "post", PUT: "put" };
+const tbody = document.getElementById("apiBody");
+
+function render(group, keyword) {
+  const kw = (keyword || "").trim().toLowerCase();
+  const rows = API.filter(function (r) {
+    var okGroup = group === "all" || r[0] === group;
+    var okKw = !kw || (r[0] + r[1] + r[2] + r[3]).toLowerCase().indexOf(kw) >= 0;
+    return okGroup && okKw;
+  });
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">没有匹配的接口，换个关键词试试</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(function (r) {
+    return '<tr>' +
+      '<td><span class="m ' + METHOD_CLASS[r[1]] + '">' + r[1] + '</span></td>' +
+      '<td class="path">' + r[2].replace(/</g, "&lt;") + '</td>' +
+      '<td>' + r[3] + '</td>' +
+      '</tr>';
+  }).join("");
+}
+
+var currentGroup = "all";
+document.getElementById("tabs").addEventListener("click", function (e) {
+  var btn = e.target.closest(".tab");
+  if (!btn) return;
+  document.querySelectorAll(".tab").forEach(function (t) { t.classList.remove("on"); });
+  btn.classList.add("on");
+  currentGroup = btn.dataset.g;
+  render(currentGroup, document.getElementById("q").value);
+});
+
+document.getElementById("q").addEventListener("input", function (e) {
+  render(currentGroup, e.target.value);
+});
+
+render("all", "");
+
+var links = Array.prototype.slice.call(document.querySelectorAll("nav a"));
+var sections = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+
+var obs = new IntersectionObserver(function (entries) {
+  entries.forEach(function (en) {
+    if (en.isIntersecting) {
+      links.forEach(function (a) { a.classList.remove("active"); });
+      var idx = sections.indexOf(en.target);
+      if (idx >= 0) links[idx].classList.add("active");
+    }
+  });
+}, { rootMargin: "-20% 0px -70% 0px" });
+
+sections.forEach(function (s) { if (s) obs.observe(s); });
+</script>
+</body>
+</html>

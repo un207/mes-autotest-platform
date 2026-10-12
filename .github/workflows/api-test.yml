@@ -1,0 +1,214 @@
+name: MES 接口自动化测试
+
+# 触发策略：
+#   push / PR  —— 只在与被测系统或测试框架相关的文件变动时跑，避免改个文档也触发整条流水线
+#   手动       —— 可选只跑冒烟（快速验证）或全量
+#   定时       —— 每天跑一次全量，用来发现「环境漂移」导致的慢性问题
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'mes-platform/**'
+      - 'mes-autotest/**'
+      - '.github/workflows/api-test.yml'
+  pull_request:
+    paths:
+      - 'mes-platform/**'
+      - 'mes-autotest/**'
+      - '.github/workflows/api-test.yml'
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: '用例范围'
+        type: choice
+        options: [all, smoke]
+        default: all
+  schedule:
+    # UTC 22:00 = 北京时间 06:00
+    - cron: '0 22 * * *'
+
+# 同一分支上重复推送时取消上一轮，省 runner 额度
+concurrency:
+  group: api-test-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # 测试库连接信息：与 mes-platform 的 application-test.yml 约定一致
+  MES_DB_HOST: 127.0.0.1
+  MES_DB_PORT: '3306'
+  MES_DB_USER: root
+  MES_DB_PASSWORD: root
+  MES_DB_NAME: mes_test
+  MES_BASE_URL: http://127.0.0.1:8080
+  ALLURE_VERSION: 2.46.1
+
+jobs:
+  api-test:
+    name: 接口自动化回归
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        # 与本地开发环境保持同一个大版本 —— 用 8.0 跑会出现「本地过、CI 挂」
+        # 这类最难查的兼容性问题，不值得省这点启动时间
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # ---------------------------------------------------------------- 环境
+      - name: 安装 JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: mes-autotest/requirements.txt
+
+      - name: 安装 Allure CLI 并缓存
+        id: allure
+        uses: actions/cache@v4
+        with:
+          path: .tools/allure-${{ env.ALLURE_VERSION }}
+          key: allure-cli-${{ env.ALLURE_VERSION }}
+
+      - name: 下载 Allure CLI（缓存未命中时）
+        if: steps.allure.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p .tools
+          curl -sSL -o /tmp/allure.zip \
+            "https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.zip"
+          unzip -q /tmp/allure.zip -d .tools
+          chmod +x ".tools/allure-${ALLURE_VERSION}/bin/allure"
+
+      - name: 安装 Python 依赖
+        working-directory: mes-autotest
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # ---------------------------------------------------------------- 准备数据库
+      - name: 初始化数据库（mes 业务库 + mes_test 测试库）
+        working-directory: mes-platform/sql
+        run: |
+          set -euo pipefail
+          mysql -h "$MES_DB_HOST" -P "$MES_DB_PORT" -u"$MES_DB_USER" -p"$MES_DB_PASSWORD" < 01_create_database.sql
+          mysql -h "$MES_DB_HOST" -P "$MES_DB_PORT" -u"$MES_DB_USER" -p"$MES_DB_PASSWORD" < 02_schema_mes.sql
+          mysql -h "$MES_DB_HOST" -P "$MES_DB_PORT" -u"$MES_DB_USER" -p"$MES_DB_PASSWORD" < 03_schema_mes_test.sql
+          mysql -h "$MES_DB_HOST" -P "$MES_DB_PORT" -u"$MES_DB_USER" -p"$MES_DB_PASSWORD" \
+            -e "SHOW TABLES;" mes_test
+
+      # ---------------------------------------------------------------- 构建并启动被测系统
+      - name: 构建被测系统（跳过其自带单测，本流水线聚焦接口层）
+        working-directory: mes-platform
+        run: mvn -B -ntp package -DskipTests
+
+      - name: 启动被测系统（test profile，数据写入 mes_test）
+        working-directory: mes-platform
+        env:
+          MES_PROFILE: test
+        run: |
+          set -euo pipefail
+          JAR=$(ls target/mes-platform-*.jar | head -n 1)
+          echo "启动 jar: $JAR"
+          nohup java -jar "$JAR" > ../app.log 2>&1 &
+          echo $! > ../app.pid
+          echo "PID=$(cat ../app.pid)"
+
+      - name: 等待被测系统就绪
+        working-directory: mes-autotest
+        run: python tools/wait_ready.py --timeout 180
+
+      - name: 被测系统日志（就绪失败时）
+        if: failure()
+        run: tail -n 80 app.log || true
+
+      # ---------------------------------------------------------------- 跑用例
+      - name: 执行接口自动化用例
+        id: pytest
+        working-directory: mes-autotest
+        env:
+          MES_RUN_LABEL: ci
+        run: |
+          set -euo pipefail
+          SCOPE="${{ github.event.inputs.scope || 'all' }}"
+          if [ "$SCOPE" = "smoke" ]; then MARK="-m smoke"; else MARK=""; fi
+          mkdir -p reports
+          # 用 tee 保证失败时也有完整输出进日志；退出码由 PIPESTATUS 兜住
+          set -o pipefail
+          python -m pytest $MARK \
+            -q \
+            --junitxml=reports/junit.xml \
+            --alluredir=reports/allure-results \
+            2>&1 | tee reports/pytest-output.txt
+
+      # ---------------------------------------------------------------- 出报告
+      - name: 生成 Allure 报告
+        if: always()
+        working-directory: mes-autotest
+        run: |
+          set -euo pipefail
+          ALLURE="../.tools/allure-${ALLURE_VERSION}/bin/allure"
+          if [ ! -x "$ALLURE" ]; then
+            echo "::warning::Allure CLI 不可执行（$ALLURE），跳过生成"
+            exit 0
+          fi
+          if [ -d reports/allure-results ] && [ -n "$(ls -A reports/allure-results 2>/dev/null)" ]; then
+            "$ALLURE" generate reports/allure-results -o reports/allure-report --clean
+            echo "Allure 报告已生成"
+          else
+            echo "::warning::没有 allure-results，跳过 Allure 报告生成"
+          fi
+
+      - name: 生成自制 HTML 报告与通过率趋势
+        if: always()
+        working-directory: mes-autotest
+        run: |
+          python tools/report_html.py || echo "::warning::HTML 报告生成失败"
+          python tools/trend.py || echo "::warning::趋势页生成失败"
+
+      # ---------------------------------------------------------------- 归档
+      - name: 上传测试报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-report-${{ github.run_number }}
+          path: |
+            mes-autotest/reports/
+            mes-autotest/history/
+          retention-days: 30
+
+      - name: 在流水线摘要里给出结论
+        if: always()
+        working-directory: mes-autotest
+        run: |
+          {
+            echo "## MES 接口自动化结果"
+            echo ""
+            if [ -f reports/junit.xml ]; then
+              echo "自制报告与趋势见下面的 artifact（\`api-test-report-${{ github.run_number }}\`）。"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: 停止被测系统
+        if: always()
+        run: |
+          if [ -f app.pid ]; then kill "$(cat app.pid)" 2>/dev/null || true; fi

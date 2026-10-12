@@ -1,0 +1,22 @@
+# 测试环境：M3 阶段 GitHub Actions 起 service 容器跑冒烟集时使用
+# 端口与库名通过环境变量注入，便于 CI 与本机共用同一份配置
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MES_DB_HOST:127.0.0.1}:${MES_DB_PORT:3306}/${MES_DB_NAME:mes_test}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${MES_DB_USER:root}
+    password: ${MES_DB_PASSWORD:123456}
+    hikari:
+      pool-name: mesTestPool
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 10000
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+logging:
+  level:
+    root: warn
+    com.xwj.mes: info

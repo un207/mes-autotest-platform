@@ -66,6 +66,8 @@ IDEA 中通过运行配置切换（界面为中文时的菜单名，括号内为
 3. 若没有该栏，点面板上方「修改选项(M)」（Modify options）勾选「环境变量」，新增 `MES_PROFILE=test`
 4. 点「确定」后**停止并重新启动服务**（环境变量仅在启动时读取）
 
+> 「编辑配置」列表为空是正常现象：直接用 `main` 方法旁的绿色三角启动时，IDEA 创建的是临时配置，默认不在该对话框中列出。处理方式见 1.6 节的「关于运行配置」。
+
 启动日志中出现以下内容即表示切换成功：
 
 ```
@@ -95,12 +97,17 @@ mvn test
 
 工程已预置 `.idea/misc.xml`、`.idea/encodings.xml`、`.idea/compiler.xml`，将项目 SDK 锁定为 JDK 17 并开启 Lombok 注解处理（该目录已被 `.gitignore` 忽略，不进入仓库）。
 
-1. `File` → `Open`，选择 `mes-platform` 目录（即 `pom.xml` 所在层级）
+1. 菜单「文件」→「打开」，选择 `mes-platform` 目录（即 `pom.xml` 所在层级）
 2. 出现 Trust Project 提示时选择信任
 3. 提示 Maven 项目待导入时，选择 Load Maven Project
-4. 核对 SDK：`File` → `Project Structure` → `Project`，SDK 应为 temurin-17，Language level 为 17。若显示为 1.8 需手动调整，JDK 版本不匹配是 Spring Boot 3 启动失败最常见的原因
+4. 核对 SDK：「文件」→「项目结构」→「项目」，SDK 应为 temurin-17，Language level 为 17。若显示为 1.8 需手动调整，JDK 版本不匹配是 Spring Boot 3 启动失败最常见的原因
 5. 打开 `src/main/java/com/xwj/mes/MesPlatformApplication.java`，运行 `main` 方法
 6. 控制台输出 `Started MesPlatformApplication` 表示启动成功，Tomcat 监听 8080 端口
+
+**关于运行配置**：第 5 步用 `main` 方法旁的绿色三角启动时，IDEA 创建的是**临时配置**，这类配置默认不出现在「编辑配置」对话框中——因此打开该对话框时列表为空是正常现象，不是项目缺配置。需要修改启动参数（如 profile）时，有两种方式：
+
+- 用绿色三角运行一次，停止后该配置即出现在「编辑配置」列表里
+- 或手动新建：打开「编辑配置」，点左上角 `+` → 在类型列表中选「Spring Boot」（位于「Shell Script」与「TestNG」之间）→ 主类填 `com.xwj.mes.MesPlatformApplication` → 填写所需参数 → 确定
 
 编辑器提示找不到 `getXxx()` 方法但 Maven 编译通过时，说明 Lombok 注解处理未启用。开启方式：菜单「文件」→「设置」→「构建、执行、部署」→「编译器」→「注解处理器」，勾选「启用注解处理」。（英文界面路径为 `File` → `Settings` → `Build, Execution, Deployment` → `Compiler` → `Annotation Processors`，勾选 Enable annotation processing。）
 

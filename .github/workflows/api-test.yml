@@ -11,12 +11,14 @@ on:
       - 'mes-platform/**'
       - 'mes-autotest/**'
       - 'mes-simulator/**'
+      - 'mes-console/**'
       - '.github/workflows/api-test.yml'
   pull_request:
     paths:
       - 'mes-platform/**'
       - 'mes-autotest/**'
       - 'mes-simulator/**'
+      - 'mes-console/**'
       - '.github/workflows/api-test.yml'
   workflow_dispatch:
     inputs:
@@ -272,3 +274,40 @@ jobs:
         if: always()
         run: |
           if [ -f app.pid ]; then kill "$(cat app.pid)" 2>/dev/null || true; fi
+
+  # 前端单独一个 job：关注点不同（构建健康度 vs 接口契约），
+  # 而且前端不需要 MySQL 与被测系统，独立出来还能与上一个 job 并行跑。
+  console-build:
+    name: 管理界面构建
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mes-console/package-lock.json
+
+      - name: 安装依赖
+        working-directory: mes-console
+        run: npm ci --no-audit --no-fund
+
+      - name: 构建
+        working-directory: mes-console
+        run: npm run build
+
+      - name: 校验构建产物
+        working-directory: mes-console
+        run: |
+          set -euo pipefail
+          test -f dist/index.html || { echo "::error::缺少 dist/index.html"; exit 1; }
+          JS_COUNT=$(find dist/assets -name '*.js' | wc -l)
+          echo "构建产物：index.html + ${JS_COUNT} 个 JS chunk"
+          # 分包是刻意做的：若有人改回单包会看到这里只剩 1 个 chunk，提前发现
+          if [ "$JS_COUNT" -lt 2 ]; then
+            echo "::warning::只产出 1 个 JS chunk，分包配置可能被改动"
+          fi

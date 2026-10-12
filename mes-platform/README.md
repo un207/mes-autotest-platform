@@ -48,6 +48,25 @@ curl http://localhost:8080/api/health      # 进程存活检测
 curl http://localhost:8080/api/ready       # 就绪检测，含 MySQL 连通性，不通时返回 503
 ```
 
+**profile 决定连接哪个数据库**，这一点在配合自动化测试时是关键。配置为 `${MES_PROFILE:dev}`，即默认使用 `dev`：
+
+| profile | 连接的库 | 适用场景 |
+|---------|----------|----------|
+| `dev`（默认） | `mes` | 人工操作与界面演示 |
+| `test` | `mes_test` | 执行自动化用例 |
+
+```bash
+export MES_PROFILE=test && mvn spring-boot:run      # 命令行方式
+```
+
+IDEA 中通过运行配置的 `Environment variables` 增加 `MES_PROFILE=test`（Spring Boot 类型的配置也可填在 `Active profiles` 一栏）。启动日志中出现以下内容即表示切换成功：
+
+```
+The following 1 profile is active: "test"
+```
+
+服务连错库时，测试框架会在开跑前终止并指出实际落点库，不会带着错误环境跑完 99 条用例再报一堆假失败。
+
 | 入口 | 用途 |
 |------|------|
 | <http://localhost:8080/swagger-ui.html> | 接口文档，可直接编辑参数发起真实请求 |

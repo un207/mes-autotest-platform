@@ -115,6 +115,49 @@ def factory(api: ApiClient, ep, db: DbClient, cfg: dict) -> DataFactory:
         print("\n[清场] 配置中 cleanup=false，本轮数据保留在库中以便排查")
 
 
+# 不参与探针定位的系统库
+_SYSTEM_SCHEMAS = {"information_schema", "mysql", "performance_schema", "sys"}
+
+
+def _locate_and_purge_probe(db: DbClient, order_no: str, validation_db: str) -> str | None:
+    """探针工单若落在别的库，定位它并从那里删掉；返回落点库名，未找到返回 None。
+
+    为什么必须单独处理这一步：环境不对时会话被 pytest.exit 中断，
+    正常的清场流程（factory 夹具的收尾）不会执行；而框架的数据库连接指向校验库（mes_test），
+    在它里面当然找不到落在业务库的探针。不处理的话，每失败一次就往业务库多留一条垃圾工单，
+    积累起来会污染管理界面的列表与统计口径。
+
+    利用「连接 A 库也能访问 B 库」这一点，用全限定名跨库操作，无需新建连接。
+    创建工单只写 mes_work_order 一张表，因此删除单条即可，无需处理级联数据。
+    """
+    rows = db.query_all(
+        "SELECT table_schema AS s FROM information_schema.tables WHERE table_name = %s",
+        ("mes_work_order",),
+    )
+
+    for row in rows:
+        schema = row["s"]
+        # 库名来自 information_schema，仍做一次白名单式校验再拼进 SQL
+        if schema in _SYSTEM_SCHEMAS or schema == validation_db:
+            continue
+        if not schema.replace("_", "").isalnum():
+            continue
+
+        found = db.query_scalar(
+            f"SELECT COUNT(*) FROM `{schema}`.`mes_work_order` WHERE order_no = %s",
+            (order_no,),
+            default=0,
+        )
+        if found:
+            db.execute(
+                f"DELETE FROM `{schema}`.`mes_work_order` WHERE order_no = %s",
+                (order_no,),
+            )
+            return schema
+
+    return None
+
+
 @pytest.fixture(scope="session", autouse=True)
 def environment_guard(factory: DataFactory) -> None:
     """环境探针：确认「服务写入的库」正是「我们校验的库」。
@@ -128,18 +171,36 @@ def environment_guard(factory: DataFactory) -> None:
     order_no = probe["orderNo"]
 
     if factory.db.get_row("mes_work_order", {"order_no": order_no}) is None:
+        validation_db = factory.db._cfg["database"]
+        leaked_into = _locate_and_purge_probe(factory.db, order_no, validation_db)
+
+        if leaked_into:
+            leak_note = (
+                f"   实际落点   = {leaked_into} 库（探针已从该库清理，不留残留）\n"
+            )
+            cause = f"MES 服务连的是 {leaked_into} 库，而框架校验的是 {validation_db} 库。"
+        else:
+            leak_note = f"   实际落点   = 未找到（可能已被其他流程清理）\n"
+            cause = "服务写入的库与框架校验的库不一致。"
+
         pytest.exit(
             "\n"
             "============================================================\n"
-            " 环境校验失败：接口建了工单，但在测试库里查不到\n"
+            " 环境校验失败：经接口建的工单，在校验库里查不到\n"
             f"   探针工单号 = {order_no}\n"
-            f"   校验库     = {factory.db._cfg['database']}\n"
+            f"   校验库     = {validation_db}\n"
+            f"{leak_note}"
             "------------------------------------------------------------\n"
-            " 几乎可以肯定是 MES 服务没有切到 test profile，数据写进了别的库。\n"
-            " 请按下面的方式重启服务后重跑：\n"
-            "   unset SERVER__PORT SERVER__HOST\n"
-            "   export MES_PROFILE=test\n"
-            "   mvn spring-boot:run\n"
+            f" {cause}\n"
+            " 这种情况下所有落库断言都会失准，因此在开跑前终止。\n"
+            "\n"
+            " 【命令行启动】\n"
+            "   export MES_PROFILE=test && mvn spring-boot:run\n"
+            "\n"
+            " 【IDEA 中启动】\n"
+            "   Run → Edit Configurations → 选中启动配置\n"
+            "   → Environment variables 里增加 MES_PROFILE=test → 重启服务\n"
+            "   重启后控制台应出现：The following 1 profile is active: \"test\"\n"
             "============================================================\n",
             returncode=2,
         )

@@ -1,0 +1,33 @@
+# M4 设备模拟器配置
+# 口令等敏感项支持环境变量覆盖（见 mes_sim/__init__.py 的 load_config）
+
+# ---- Modbus 服务端（模拟的设备从站）----
+modbus:
+  host: 127.0.0.1
+  # 用 5020 而不是标准的 502：502 在 Windows 上常被系统保留，且 <1024 端口需要特权，
+  # 学习项目里换个高位端口更省事。真实的 Modbus TCP 默认是 502。
+  port: 5020
+  unit_id: 1
+
+# ---- 设备工况（决定这台设备"怎么干活"）----
+device:
+  # 设备编号会写进 MES 库，用 SIM 前缀与自动化测试（M2 前缀）造的数据区分开
+  equipment_code: SIM-LASER-01
+  line_code: SIM-LINE-A
+  cycle_seconds: 6.0        # 生产节拍：每件 6 秒
+  base_temperature: 24.0    # 基准温度 ℃
+  temperature_drift: 0.6    # 每 tick 温度漂移幅度 ℃
+  temperature_limit: 78.0   # 超过则转故障态（过热保护）
+  defect_rate: 0.03         # 不良率 3%
+  startup_minutes: 90       # 启动时已运行 90 分钟（让数据一上来就有内容）
+
+# ---- 采集器 ----
+collector:
+  interval_seconds: 3.0     # 轮询周期
+  mes_base_url: http://127.0.0.1:8080
+  timeout: 8.0
+
+# ---- 设备心跳 ----
+runtime:
+  tick_seconds: 0.5         # 设备逻辑推进步长
+  log_every_ticks: 20       # 每 N 个 tick 打一次状态日志（0.5s × 20 = 10s 一条）

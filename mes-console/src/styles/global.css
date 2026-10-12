@@ -1,0 +1,126 @@
+/* 全局样式：只放跨页面共用的东西，页面私有样式写在各自组件里 */
+
+:root {
+  --mes-bg: #f5f7fa;
+  --mes-sidebar: #1f2733;
+  --mes-sidebar-hover: #2b3543;
+  --mes-sidebar-active: #2f6feb;
+  --mes-text-muted: #8a94a1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--mes-bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC',
+    'Hiragino Sans GB', sans-serif;
+}
+
+/* 数字/编号统一用等宽字体，扫读时对齐更舒服 */
+.mono {
+  font-family: ui-monospace, Consolas, 'Liberation Mono', monospace;
+}
+
+.text-muted {
+  color: var(--mes-text-muted);
+}
+
+/* 页面统一的区块标题 */
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.section-hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--mes-text-muted);
+  line-height: 1.6;
+}
+
+/* 指标卡：数字大、标签小，一眼看到重点 */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.metric-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px 18px;
+  border: 1px solid #e8ecf1;
+}
+
+.metric-card .label {
+  font-size: 12px;
+  color: var(--mes-text-muted);
+  margin-bottom: 6px;
+}
+
+.metric-card .value {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.metric-card .value small {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--mes-text-muted);
+  margin-left: 3px;
+}
+
+.metric-card .value.is-good {
+  color: #1a7f37;
+}
+
+.metric-card .value.is-warn {
+  color: #9a6700;
+}
+
+.metric-card .value.is-bad {
+  color: #cf222e;
+}
+
+/* 让表格里的单号、单号类字段可一键复制的感觉（hover 变手型） */
+.clickable-code {
+  cursor: pointer;
+  color: #2f6feb;
+}
+
+.clickable-code:hover {
+  text-decoration: underline;
+}
+
+/* 页面容器：统一留白 */
+.page {
+  padding: 20px 24px 60px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.toolbar .spacer {
+  flex: 1;
+}

@@ -10,11 +10,13 @@ on:
     paths:
       - 'mes-platform/**'
       - 'mes-autotest/**'
+      - 'mes-simulator/**'
       - '.github/workflows/api-test.yml'
   pull_request:
     paths:
       - 'mes-platform/**'
       - 'mes-autotest/**'
+      - 'mes-simulator/**'
       - '.github/workflows/api-test.yml'
   workflow_dispatch:
     inputs:
@@ -164,6 +166,33 @@ jobs:
             --alluredir=reports/allure-results \
             2>&1 | tee reports/pytest-output.txt
 
+      # ---------------------------------------------------------------- M4 设备模拟器
+      # 分两步：先自检（不需要 MES，验证 Modbus 自身可用），
+      # 再端到端（验证「模拟器造的异常数据，MES 确实能识别出来」）。
+      - name: 安装设备模拟器依赖
+        working-directory: mes-simulator
+        run: |
+          set -euo pipefail
+          pip install -r requirements.txt
+
+      - name: 设备模拟器自检（Modbus 通路 + 设备逻辑 + 异常注入）
+        id: sim_selfcheck
+        working-directory: mes-simulator
+        run: python run.py --self-check
+
+      - name: 设备模拟器端到端验证（模拟器 → MES 数采 → 质量判定）
+        id: sim_verify
+        if: always()
+        working-directory: mes-simulator
+        run: |
+          set -euo pipefail
+          # 自检失败说明模拟器本身有问题，端到端没有意义，跳过免得误判成 MES 的错
+          if [ "${{ steps.sim_selfcheck.outcome }}" != "success" ]; then
+            echo "::warning::模拟器自检未通过，跳过端到端验证"
+            exit 0
+          fi
+          python verify.py 2>&1 | tee verify-output.txt
+
       # ---------------------------------------------------------------- 出报告
       - name: 生成 Allure 报告
         if: always()
@@ -223,7 +252,9 @@ jobs:
           path: |
             mes-autotest/reports/
             mes-autotest/history/
+            mes-simulator/verify-output.txt
           retention-days: 30
+          if-no-files-found: warn
 
       - name: 在流水线摘要里给出结论
         if: always()

@@ -1,0 +1,16 @@
+# M4 设备模拟器依赖
+# 本机 venv 实测版本（2026-10-12 核实）
+
+# Modbus TCP 客户端（采集器用）
+pymodbus==3.16.0
+
+# pymodbus 3.16 的 transport 层无条件导入 serialtransport，缺 pyserial 时
+# 连 TCP 模式都 import 不了（报 NameError: pyserial is not defined）。
+# 官方仓库已确认此问题，这里显式声明依赖。
+pyserial==3.5
+
+# 上报 MES 数采接口
+requests==2.34.2
+
+# 配置
+PyYAML==6.0.3

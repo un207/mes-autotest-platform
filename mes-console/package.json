@@ -1,0 +1,22 @@
+{
+  "name": "mes-console",
+  "version": "1.0.0",
+  "private": true,
+  "description": "迷你 MES 管理界面 —— 工单、质检、物料追溯、设备数采的可视化操作台",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173"
+  },
+  "dependencies": {
+    "vue": "^3.5.0",
+    "element-plus": "^2.9.0",
+    "@element-plus/icons-vue": "^2.3.0",
+    "echarts": "^5.6.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.0",
+    "vite": "^6.0.0"
+  }
+}

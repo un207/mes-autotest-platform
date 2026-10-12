@@ -59,7 +59,14 @@ curl http://localhost:8080/api/ready       # 就绪检测，含 MySQL 连通性�
 export MES_PROFILE=test && mvn spring-boot:run      # 命令行方式
 ```
 
-IDEA 中通过运行配置的 `Environment variables` 增加 `MES_PROFILE=test`（Spring Boot 类型的配置也可填在 `Active profiles` 一栏）。启动日志中出现以下内容即表示切换成功：
+IDEA 中通过运行配置切换（界面为中文时的菜单名，括号内为英文界面对应项）：
+
+1. 点运行按钮左侧的下拉箭头 → 选「编辑配置(E)...」（Edit Configurations）
+2. 左侧选中启动配置，在右侧「活动配置文件(A)」（Active profiles）填入 `test`
+3. 若没有该栏，点面板上方「修改选项(M)」（Modify options）勾选「环境变量」，新增 `MES_PROFILE=test`
+4. 点「确定」后**停止并重新启动服务**（环境变量仅在启动时读取）
+
+启动日志中出现以下内容即表示切换成功：
 
 ```
 The following 1 profile is active: "test"
@@ -95,7 +102,7 @@ mvn test
 5. 打开 `src/main/java/com/xwj/mes/MesPlatformApplication.java`，运行 `main` 方法
 6. 控制台输出 `Started MesPlatformApplication` 表示启动成功，Tomcat 监听 8080 端口
 
-编辑器提示找不到 `getXxx()` 方法但 Maven 编译通过时，说明 Lombok 注解处理未启用：`File` → `Settings` → `Build, Execution, Deployment` → `Compiler` → `Annotation Processors`，勾选 Enable annotation processing。
+编辑器提示找不到 `getXxx()` 方法但 Maven 编译通过时，说明 Lombok 注解处理未启用。开启方式：菜单「文件」→「设置」→「构建、执行、部署」→「编译器」→「注解处理器」，勾选「启用注解处理」。（英文界面路径为 `File` → `Settings` → `Build, Execution, Deployment` → `Compiler` → `Annotation Processors`，勾选 Enable annotation processing。）
 
 ---
 

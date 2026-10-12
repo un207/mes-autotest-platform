@@ -32,6 +32,10 @@ concurrency:
   group: api-test-${{ github.ref }}
   cancel-in-progress: true
 
+# 需要写权限，用于把执行历史回写仓库（通过率趋势要跨运行累积）
+permissions:
+  contents: write
+
 env:
   # 测试库连接信息：与 mes-platform 的 application-test.yml 约定一致
   MES_DB_HOST: 127.0.0.1
@@ -184,6 +188,31 @@ jobs:
         run: |
           python tools/report_html.py || echo "::warning::HTML 报告生成失败"
           python tools/trend.py || echo "::warning::趋势页生成失败"
+
+      # 把本轮的执行记录回写仓库 —— 否则「通过率趋势随仓库累积」这件事对 CI 而言并不成立，
+      # 记录会随着 artifact 到期而消失。
+      # 提交信息带 [skip ci]：这条提交本身不该再触发一轮流水线。
+      - name: 回写执行历史
+        if: always()
+        run: |
+          set -euo pipefail
+          FILE="mes-autotest/history/api-test-history.jsonl"
+          if [ ! -f "$FILE" ]; then
+            echo "::warning::没有执行历史文件，跳过回写"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$FILE"
+          if git diff --cached --quiet; then
+            echo "执行历史无变化，无需回写"
+          else
+            ROWS=$(wc -l < "$FILE")
+            git commit -q -m "chore(ci): 记录第 ${{ github.run_number }} 次自动回归结果 [skip ci]" \
+              -m "来源：GitHub Actions #${{ github.run_number }}；累计历史 ${ROWS} 条。"
+            git push
+            echo "执行历史已回写（累计 ${ROWS} 条）"
+          fi
 
       # ---------------------------------------------------------------- 归档
       - name: 上传测试报告

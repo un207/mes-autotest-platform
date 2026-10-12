@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import os
 import socket
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -21,11 +21,43 @@ ROOT = Path(__file__).resolve().parent.parent
 HISTORY_DIR = ROOT / "history"
 HISTORY_FILE = HISTORY_DIR / "api-test-history.jsonl"
 
+# 展示统一用北京时间：CI runner 在 UTC、开发者本机在 UTC+8，
+# 若各自记本地时间，同一份趋势里时间会忽早忽晚，排序与阅读都会错乱。
+DISPLAY_TZ = timezone(timedelta(hours=8))
+
 
 def history_file() -> Path:
     """历史文件路径。可用 MES_HISTORY_FILE 覆盖（便于隔离测试或多环境分开累积）。"""
     override = os.getenv("MES_HISTORY_FILE")
     return Path(override) if override else HISTORY_FILE
+
+
+def to_display(instant: datetime) -> str:
+    """把任意时区的时刻转成北京时间字符串（用于展示）。"""
+    return instant.astimezone(DISPLAY_TZ).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def sort_key(record: dict[str, Any]) -> float:
+    """排序键（epoch 秒）。
+
+    优先用带时区的 `ts` 字段，这样跨时区（本机 UTC+8 / CI UTC）也能正确排序；
+    没有 `ts` 的旧记录退化为按 `time` 解析并**假定为北京时间** —— 这批记录都是
+    本机产生的，本机即 UTC+8，所以这个假定是准确的。
+    """
+    raw_ts = record.get("ts")
+    if raw_ts:
+        try:
+            return datetime.fromisoformat(raw_ts).timestamp()
+        except (ValueError, TypeError):
+            pass
+
+    raw_time = record.get("time", "")
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
+        try:
+            return datetime.strptime(raw_time, fmt).replace(tzinfo=DISPLAY_TZ).timestamp()
+        except ValueError:
+            continue
+    return 0.0
 
 
 def append_run(
@@ -47,9 +79,12 @@ def append_run(
     target = history_file()
     target.parent.mkdir(parents=True, exist_ok=True)
 
+    now = datetime.now().astimezone()
     record: dict[str, Any] = {
-        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "run_id": run_id or datetime.now().strftime("%Y%m%d%H%M%S"),
+        # ts 带时区偏移，是排序与跨时区比较的依据；time 是供人阅读的北京时间
+        "ts": now.isoformat(timespec="seconds"),
+        "time": to_display(now),
+        "run_id": run_id or now.strftime("%Y%m%d%H%M%S"),
         # label 用于区分执行来源，趋势图上要能看出「这轮是 CI 跑的还是在本地跑的」
         "label": label or os.getenv("MES_RUN_LABEL", "local"),
         "host": socket.gethostname(),
@@ -107,7 +142,7 @@ def load_history(limit: int = 0) -> list[dict[str, Any]]:
                 # 单行损坏不该让整个趋势挂掉，跳过即可
                 continue
 
-    records.sort(key=lambda r: r.get("time", ""))
+    records.sort(key=sort_key)
     return records[-limit:] if limit > 0 else records
 
 

@@ -105,11 +105,20 @@ python -m http.server 9000 --directory reports/allure-report
 每跑一轮（无论成功失败），`common/history.py` 会往 `history/api-test-history.jsonl` 追加一条摘要：
 
 ```json
-{"time":"2026-10-12 13:38:04","run_id":"20261012133804","label":"local-full",
- "total":99,"passed":99,"failed":0,"error":0,"duration":19.925,"pass_rate":100.0}
+{"ts":"2026-10-12T13:38:04+08:00","time":"2026-10-12 13:38:04","run_id":"20261012133804",
+ "label":"local-full","host":"WIN-JDF6FLM04TD","total":99,"passed":99,"failed":0,"error":0,
+ "duration":19.925,"pass_rate":100.0}
 ```
 
 这个文件**进版本控制**（与随时可删的 `reports/` 不同）—— 趋势的价值就在于跨轮次、跨机器累积。
+CI 每跑完一轮也会把它回写仓库（见第 6 节），所以本机与 CI 的记录汇在同一条趋势线上。
+
+**两个字段为什么都要**：
+
+| 字段 | 用途 |
+|------|------|
+| `ts` | 带时区偏移，**排序与跨时区比较的依据**。CI runner 在 UTC、本机在 UTC+8，只靠本地时间字符串排序会把 CI 那轮排到最早 |
+| `time` | 供人阅读的**北京时间**。同一次执行在 CI 上记录为 UTC，展示时统一转成北京时间，避免同一份趋势里时间忽早忽晚 |
 
 ```bash
 python tools/trend.py                    # 渲染趋势页
@@ -286,8 +295,18 @@ qty_conservation:
 
 ### 6.3 趋势在 CI 上怎么累积
 
-用 `actions/cache` 缓存 `mes-autotest/history/`（key 带 `run_id`，`restore-keys` 前缀匹配），
-每次运行先恢复最近一次的历史，跑完保存新的，趋势就能跨运行累积。
+流水线在生成报告后会**把执行历史回写仓库**（提交信息带 `[skip ci]`，避免自己再触发一轮）：
+
+```
+生成报告 → git add history/api-test-history.jsonl
+        → 有变化才提交并推送（无变化跳过）
+```
+
+为什么必须回写：否则 CI 跑出的记录只存在 artifact 里，30 天后随 artifact 过期消失，
+「趋势随仓库累积」这件事对 CI 而言就不成立。
+
+> 这一步需要 `permissions: contents: write`，已在 workflow 里声明。
+> 若仓库开启了分支保护，自动提交会被拒绝 —— 那种情况下把这一步改成只上传 artifact 即可。
 
 ### 6.4 CI 与本地的一致性
 

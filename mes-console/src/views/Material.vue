@@ -9,6 +9,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import api from '../api'
+import WorkOrderSelect from '../components/WorkOrderSelect.vue'
 import { BATCH_STATUS, BATCH_STATUS_OPTIONS, dictLabel, dictType } from '../utils/dict'
 
 const loading = ref(false)
@@ -249,7 +250,12 @@ async function outbound(row) {
           <el-input v-model="form.materialName" placeholder="如 45# 圆钢" maxlength="64" />
         </el-form-item>
         <el-form-item label="绑定工单">
-          <el-input v-model="form.orderNo" placeholder="选填，如 WO20261012..." maxlength="32" />
+          <WorkOrderSelect
+            v-model="form.orderNo"
+            placeholder="选填；绑定后批次状态直接为「在用」"
+            clearable
+            width="100%"
+          />
         </el-form-item>
         <el-form-item label="供应商">
           <el-input v-model="form.supplier" placeholder="选填" maxlength="64" />
@@ -278,7 +284,7 @@ async function outbound(row) {
       </el-alert>
       <el-form label-width="80px">
         <el-form-item label="工单号" required>
-          <el-input v-model="bindOrderNo" placeholder="如 WO20261012..." maxlength="32" />
+          <WorkOrderSelect v-model="bindOrderNo" width="100%" />
         </el-form-item>
       </el-form>
       <template #footer>

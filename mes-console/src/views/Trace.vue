@@ -12,6 +12,7 @@ import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 
 import api from '../api'
+import WorkOrderSelect from '../components/WorkOrderSelect.vue'
 import { BATCH_STATUS, INSPECT_RESULT, TRACE_NODE, dictLabel, dictType } from '../utils/dict'
 
 const mode = ref('order') // order = 反向追溯 / batch = 正向追溯
@@ -88,9 +89,17 @@ const defects = computed(() => result.value?.defects || [])
       </el-radio-group>
 
       <div class="toolbar" style="margin-bottom: 0">
-        <el-input
+        <WorkOrderSelect
+          v-if="mode === 'order'"
           v-model="keyword"
-          :placeholder="mode === 'order' ? '输入工单号，如 WO20261012...' : '输入批次号，如 B-...'"
+          placeholder="选择工单，可输入单号或产品名搜索"
+          width="320px"
+          @change="search"
+        />
+        <el-input
+          v-else
+          v-model="keyword"
+          placeholder="输入批次号，如 MB20261013..."
           clearable
           style="width: 320px"
           @keyup.enter="search"

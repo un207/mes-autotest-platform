@@ -11,6 +11,7 @@ import { ElMessage } from 'element-plus'
 
 import api from '../api'
 import EChart from '../components/EChart.vue'
+import WorkOrderSelect from '../components/WorkOrderSelect.vue'
 import { INSPECT_RESULT, INSPECT_TYPE, INSPECT_TYPE_OPTIONS, dictLabel, dictType } from '../utils/dict'
 
 // ---------------------------------------------------------------- 列表
@@ -204,12 +205,12 @@ async function openDefects(row) {
       <el-col :xs="24" :lg="16">
         <el-card shadow="never">
           <div class="toolbar" style="margin-bottom: 12px">
-            <el-input
+            <WorkOrderSelect
               v-model="query.orderNo"
-              placeholder="按工单号筛选"
+              placeholder="按工单筛选"
               clearable
-              style="width: 200px"
-              @keyup.enter="search"
+              width="220px"
+              @change="search"
             />
             <el-select v-model="query.inspectType" placeholder="全部检验类型" clearable style="width: 150px" @change="search">
               <el-option v-for="o in INSPECT_TYPE_OPTIONS" :key="o.value" :label="o.label" :value="o.value" />
@@ -292,7 +293,7 @@ async function openDefects(row) {
       </el-alert>
       <el-form :model="form" label-width="94px">
         <el-form-item label="工单号" required>
-          <el-input v-model="form.orderNo" placeholder="如 WO20261012..." maxlength="32" />
+          <WorkOrderSelect v-model="form.orderNo" width="100%" />
         </el-form-item>
         <el-form-item label="批次号">
           <el-input v-model="form.batchNo" placeholder="选填；填了会校验批次是否属于该工单" maxlength="32" />

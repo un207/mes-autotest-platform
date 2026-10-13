@@ -23,14 +23,20 @@ mvn spring-boot:run
 # 2. 安装依赖并启动界面
 cd ../mes-console
 npm install
-npm run dev          # 开发模式，http://localhost:5173
+npm run dev
 ```
 
-生产构建与产物预览：
+`npm run dev` 启动后监听 `http://localhost:5173`。
+
+> 上面每行命令都请**单独执行**，不要把命令与其后的说明文字一起复制到别处。
+> 在 IDE 的运行配置里，「实参」（Arguments）一栏必须**留空** ——
+> 若把说明文字填进去，vite 会把它当作根目录参数，导致浏览器打开是 404（详见 `docs/使用手册.md` 第五节）。
+
+生产构建与产物预览（产物输出至 `dist/`；预览监听 4173）：
 
 ```bash
-npm run build        # 构建产物输出至 dist/
-npm run preview      # 预览构建产物，http://localhost:4173
+npm run build
+npm run preview
 ```
 
 后端地址默认为 `http://127.0.0.1:8080`，切换环境时通过环境变量覆盖，无需修改代码：

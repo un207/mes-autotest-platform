@@ -93,6 +93,11 @@ public class DeviceDataService {
                 .eq(StringUtils.hasText(query.getLineCode()), DeviceData::getLineCode, query.getLineCode())
                 .eq(query.getMetric() != null, DeviceData::getMetric, query.getMetric())
                 .eq(query.getQualityFlag() != null, DeviceData::getQualityFlag, query.getQualityFlag())
+                // 同一轮上报的多个指标共用同一个采集时间（秒级精度），仅按时间排序时同刻记录的顺序
+                // 取决于插入先后，而插入是并发的，会导致列表顺序在刷新间跳变。补一个 metric 作为
+                // 次级排序键，使同一时刻的记录稳定呈现为 产量 → 运行状态 → 温度（枚举名字典序正好如此）。
+                .orderByDesc(DeviceData::getCollectTime)
+                .orderByAsc(DeviceData::getMetric)
                 .orderByDesc(DeviceData::getId);
 
         Page<DeviceData> page = deviceDataMapper.selectPage(

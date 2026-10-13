@@ -39,6 +39,14 @@ class RegisterPoint:
     unit: str
     scale: float
     desc: str
+    cumulative: bool = False
+    """是否为累计量。累计量只在数值变化时上报，瞬时量每轮上报。
+
+    区分的依据是两类量的语义不同：累计产量未变化说明本周期没有新产出，
+    重复上报同一个数没有信息量（轮询周期小于生产节拍时尤其明显，
+    会让「累计产量」在列表里看起来反复跳动）；而温度、运行状态反映当前工况，
+    即使与上一轮相同也应当有采样记录。
+    """
 
     def to_engineering(self, raw: int) -> float:
         """寄存器整数 → 工程值（如 255 → 25.5）。"""
@@ -55,7 +63,7 @@ class RegisterPoint:
 # ---------------------------------------------------------------------------
 POINTS: tuple[RegisterPoint, ...] = (
     RegisterPoint(0, "OUTPUT_COUNT", "累计产量", Metric.OUTPUT, "件", 1.0,
-                  "设备开机以来的累计产出，随生产节拍递增"),
+                  "设备开机以来的累计产出，随生产节拍递增", cumulative=True),
     RegisterPoint(1, "RUN_STATUS", "运行状态", Metric.STATUS, "", 1.0,
                   "0=停机 1=运行 2=故障（MES 侧合理区间为 0~10）"),
     RegisterPoint(2, "TEMPERATURE", "设备温度", Metric.TEMPERATURE, "℃", 0.1,

@@ -16,14 +16,15 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass
+import random
+from dataclasses import dataclass, field
 from datetime import datetime
 
 import requests
 from pymodbus.client import AsyncModbusTcpClient
 
 from . import registers as R
-from .faults import FaultInjector
+from .faults import RANDOM_FAULT_POOL, FaultInjector
 
 log = logging.getLogger(__name__)
 
@@ -67,7 +68,13 @@ class Collector:
     injector: FaultInjector
     timeout: float = 8.0
 
+    random_fault_rate: float = 0.0
+    """随机故障概率（每指标每轮）。0 表示关闭，仅用于演示时制造可识别的脏数据。"""
+
     _client: AsyncModbusTcpClient | None = None
+    _last_reported: dict[str, str] = field(default_factory=dict)
+    """各指标最近一次上报的原始串，用于判断累计量是否变化。"""
+    _rng: random.Random = field(default_factory=random.Random)
 
     # ------------------------------------------------------------------ 连接
 
@@ -113,7 +120,13 @@ class Collector:
         """组装一条上报报文。"""
         # 采集侧异常注入优先：现场故障时设备根本没有有效值，上报的是错误标记串
         override = self.injector.raw_override(point.metric)
-        raw_value = override if override is not None else self.to_raw_value(point, raw)
+        if override is not None:
+            raw_value = override
+        elif self.random_fault_rate and self._rng.random() < self.random_fault_rate:
+            # 随机故障（演示用）：把正常值替换成现场常见的异常串，让把关逻辑可见
+            raw_value = self._rng.choice(RANDOM_FAULT_POOL)
+        else:
+            raw_value = self.to_raw_value(point, raw)
 
         return {
             "equipmentCode": self.device_code,
@@ -127,7 +140,20 @@ class Collector:
     # ------------------------------------------------------------------ 上报
 
     async def report_once(self, scene: str = "") -> list[ReportResult]:
-        """读一轮寄存器，把三种指标各上报一条。"""
+        """读一轮寄存器，上报需要上报的指标。
+
+        两处刻意的设计：
+
+        ① **累计量只在数值变化时上报。** 轮询周期（默认 3s）小于生产节拍（默认 6s）时，
+           同一个累计产量会被连续读到两次并重复入库，列表里看起来像「产量在反复跳动」。
+           累计量未变化说明本周期没有新产出，重复上报没有信息量。
+           温度与运行状态是瞬时量，每轮照报 —— 它们同时充当设备心跳，
+           因此累计量跳过不会让 MES 失去对设备在线状态的感知。
+
+        ② **串行上报而非并发。** 同一轮的多条记录采集时间相同（接口的 collectTime
+           是秒级精度），并发上报的完成顺序不确定，会造成入库 id 顺序随机、
+           列表顺序在两次刷新之间跳变。串行上报使写入顺序与点表顺序一致。
+        """
         points = await self.read_points()
         if points is None:
             # 设备读不到时如实上报通信错误，而不是跳过 —— 沉默的采集器比报错的更危险
@@ -137,15 +163,53 @@ class Collector:
         for point in R.POINTS:
             if point.metric is None:
                 continue  # 设备自身状态点不上报
+
+            current = self.to_raw_value(point, points[point.name])
+            # 被注入故障时强制上报：否则「累计量未变化跳过」会把故障数据一起跳过
+            if (point.cumulative
+                    and self.injector.raw_override(point.metric) is None
+                    and self._last_reported.get(point.metric.value) == current):
+                continue
+            self._last_reported[point.metric.value] = current
             payloads.append(self.build_payload(point, points[point.name]))
 
-        responses = await asyncio.gather(
-            *(asyncio.to_thread(self._post, p) for p in payloads)
-        )
-        return [
-            self._to_result(p["metric"], p["rawValue"], scene, resp)
-            for p, resp in zip(payloads, responses)
-        ]
+        if not payloads:
+            return []
+
+        results: list[ReportResult] = []
+        for p in payloads:
+            resp = await asyncio.to_thread(self._post, p)
+            results.append(self._to_result(p["metric"], p["rawValue"], scene, resp))
+        return results
+
+    def fetch_last_counter(self, metric: R.Metric) -> int | None:
+        """从 MES 查回该设备某指标最近一次的数值，用于重启后延续累计量。
+
+        为什么需要：模拟器每次启动都会把累计产量从 0 重新计数，而现场设备的计数器
+        通常掉电保持。若不延续，列表里会出现「昨天累计到 3，今天从 0 开始」的回落，
+        看起来像数据错误。采集类应用查询失败不应阻断启动，因此失败仅告警并返回 None。
+        """
+        url = f"{self.mes_base_url.rstrip('/')}/api/device-data"
+        try:
+            resp = requests.get(
+                url,
+                params={
+                    "equipmentCode": self.device_code,
+                    "metric": metric.value,
+                    "pageNum": 1,
+                    "pageSize": 1,
+                },
+                timeout=self.timeout,
+            )
+            body = resp.json()
+            records = (body.get("data") or {}).get("records") or []
+            if not records:
+                return None
+            value = records[0].get("metricValue")
+            return int(float(value)) if value is not None else None
+        except (requests.RequestException, ValueError, TypeError) as exc:
+            log.warning("读取历史累计值失败（累计量将从 0 开始）：%s", exc)
+            return None
 
     async def _report_comm_failure(self, scene: str) -> list[ReportResult]:
         """设备通信失败时的上报：原始串用通信错误标记，让 MES 判为不可解析。"""

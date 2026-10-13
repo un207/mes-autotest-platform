@@ -26,6 +26,12 @@ collector:
   interval_seconds: 3.0     # 轮询周期
   mes_base_url: http://127.0.0.1:8080
   timeout: 8.0
+  # 启动时从 MES 查回本设备上次的累计产量，延续计数（模拟设备的掉电保持计数器）。
+  # 关闭则每次启动从 0 开始，列表里会出现累计产量回落，像是数据出错。
+  resume_counter: true
+  # 随机故障概率（每指标每轮），0 = 关闭。
+  # 仅用于演示：让它非 0 后，运行期间会随机产生可被 MES 识别的异常/可疑数据。
+  random_fault_rate: 0.0
 
 # ---- 设备心跳 ----
 runtime:

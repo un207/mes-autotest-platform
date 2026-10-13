@@ -83,6 +83,20 @@ class DeviceSimulator:
         self._status = 1
         self._flush()
 
+    def seed_counters(self, output: int) -> None:
+        """用历史累计产量初始化计数器，模拟「设备未断电、计数延续」。
+
+        模拟器每次启动都从 0 开始计数，而现场设备的产量计数器通常掉电保持。
+        不延续的话，列表里会出现「上次累计到 3、这次从 0 开始」的回落，像是数据错误。
+
+        良品与不良按设定不良率拆分：这两项在点表里不上报，仅用于设备内部状态展示，
+        MES 侧没有可回查的历史，因此按比例还原一个合理的起始分布。
+        """
+        self._output = max(0, int(output))
+        qualified = int(round(self._output * (1 - self.profile.defect_rate)))
+        self._qualified = qualified
+        self._defective = self._output - qualified
+
     # ------------------------------------------------------------------ 推进
 
     def tick(self, elapsed: float) -> None:

@@ -18,6 +18,7 @@ import signal
 import sys
 
 from mes_sim import SCENARIOS, Collector, build_simulator, load_config
+from mes_sim import registers as R
 
 log = logging.getLogger("simulator")
 
@@ -75,6 +76,13 @@ async def collect_loop(collector: Collector, interval: float, stop: asyncio.Even
 
 async def run_normal(args) -> int:
     cfg = load_config()
+
+    # 命令行参数覆盖配置文件：便于临时演示，不必改文件
+    if args.random_fault is not None:
+        cfg["collector"]["random_fault_rate"] = args.random_fault
+    if args.no_resume:
+        cfg["collector"]["resume_counter"] = False
+
     server, device, injector = build_simulator(cfg)
 
     # ---- 自检：确认 Modbus 读写通路是通的，别等采集时才发现在空转 ----
@@ -90,13 +98,7 @@ async def run_normal(args) -> int:
         return 2
     log.info("Modbus 服务端自检通过：%s", detail)
 
-    # ---- 设备开机 ----
-    if args.fault:
-        sc = injector.inject(args.fault)
-        log.warning("已按参数注入异常场景：%s —— %s", sc.label, sc.desc)
-    device.start()
-    log.info("设备已开机：%s", device.snapshot())
-
+    # ---- 采集器（先建，供「延续累计量」查历史值）----
     collector = Collector(
         device_code=device.equipment_code,
         line_code=device.line_code,
@@ -106,7 +108,28 @@ async def run_normal(args) -> int:
         mes_base_url=cfg["collector"]["mes_base_url"],
         injector=injector,
         timeout=float(cfg["collector"]["timeout"]),
+        random_fault_rate=float(cfg["collector"].get("random_fault_rate", 0.0)),
     )
+
+    # ---- 设备开机 ----
+    # 延续累计量：从 MES 查回上次的累计产量再开机，避免列表里出现「累计产量回落」。
+    # 失败不阻断启动（现场更常见的情况就是查不到历史），仅告警后从 0 开始。
+    if cfg["collector"].get("resume_counter", True):
+        last = collector.fetch_last_counter(R.Metric.OUTPUT)
+        if last is not None:
+            device.seed_counters(last)
+            log.info("已延续累计产量：从 %s 开始（上次记录值）", last)
+        else:
+            log.info("未查到历史累计产量，本次从 0 开始计数")
+
+    if args.fault:
+        sc = injector.inject(args.fault)
+        log.warning("已按参数注入异常场景：%s —— %s", sc.label, sc.desc)
+    if collector.random_fault_rate:
+        log.warning("随机故障已开启：每指标每轮有 %.0f%% 概率产生异常数据（演示用）",
+                    collector.random_fault_rate * 100)
+    device.start()
+    log.info("设备已开机：%s", device.snapshot())
 
     stop = asyncio.Event()
     _install_signal_handlers(stop)
@@ -214,6 +237,11 @@ def main() -> int:
     parser.add_argument("--self-check", action="store_true", help="只做自检，不连 MES")
     parser.add_argument("--duration", type=float, help="运行多少秒后自动退出")
     parser.add_argument("--no-collect", action="store_true", help="只跑设备，不上报 MES")
+    parser.add_argument("--random-fault", type=float, nargs="?", const=0.08, default=None,
+                        metavar="RATE",
+                        help="开启随机故障（可指定概率，默认 0.08），演示用")
+    parser.add_argument("--no-resume", action="store_true",
+                        help="不延续累计产量，本次从 0 开始计数")
     parser.add_argument("-v", "--verbose", action="store_true", help="调试日志")
     args = parser.parse_args()
 

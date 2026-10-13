@@ -14,6 +14,9 @@
 *.log
 .tmp/
 
+# ---- 文档构建产物（由 .tools/md2pdf.py 生成，可随时重新导出） ----
+docs/pdf/
+
 # ---- 系统 ----
 .DS_Store
 Thumbs.db
